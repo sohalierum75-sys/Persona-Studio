@@ -20,6 +20,28 @@ DEPLOY_DIR=/opt/persona-studio
 cd "$DEPLOY_DIR"
 export IMAGE_TAG
 
+# ── Docker prerequisite (idempotent) ─────────────────────────────────────────
+# Install Docker Engine + Compose plugin from Docker's official Ubuntu
+# repository only when docker is absent; existing services are untouched.
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker not found — installing from the official Docker apt repository"
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -y
+  apt-get install -y ca-certificates curl
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  chmod a+r /etc/apt/keyrings/docker.asc
+  . /etc/os-release
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME:-noble} stable" \
+    > /etc/apt/sources.list.d/docker.list
+  apt-get update -y
+  apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  systemctl enable --now docker
+fi
+
+docker info >/dev/null 2>&1 || { echo "✗ docker daemon is not responding (systemctl status docker)" >&2; exit 1; }
+docker compose version >/dev/null 2>&1 || { echo "✗ docker compose plugin missing" >&2; exit 1; }
+
 # GHCR is private: read-only login using a token stored on the VPS
 if [ -f "$DEPLOY_DIR/.ghcr-token" ]; then
   docker login ghcr.io -u "$(cat "$DEPLOY_DIR/.ghcr-user" 2>/dev/null || echo persona-deploy)" \
