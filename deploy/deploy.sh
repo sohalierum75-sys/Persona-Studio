@@ -85,7 +85,7 @@ fi
 # ── User-provided secrets check (one list, nothing printed) ──────────────────
 MISSING=()
 for k in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET; do
-  v=$(grep -E "^$k=" "$ENV_FILE" | tail -1 | cut -d= -f2-)
+  v=$(grep -E "^$k=" "$ENV_FILE" | tail -1 | cut -d= -f2- || true)
   if [ -z "$v" ] || printf '%s' "$v" | grep -qiE "CHANGE_ME|YOUR_"; then MISSING+=("$k(in .env)"); fi
 done
 if [ ! -f "$DEPLOY_DIR/.ghcr-token" ] && ! docker manifest inspect "$IMAGE:$IMAGE_TAG" >/dev/null 2>&1; then
