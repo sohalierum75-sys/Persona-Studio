@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_DB: persona_studio
+      POSTGRES_USER: persona
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U persona -d persona_studio"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  api:
+    build:
+      context: .
+      args:
+        VITE_API_URL: ${PUBLIC_BASE_URL:-http://localhost:3210}
+    env_file: server/.env
+    environment:
+      DATABASE_URL: postgresql://persona:${POSTGRES_PASSWORD}@db:5432/persona_studio
+      STATIC_DIR: /app/web
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "127.0.0.1:3210:3210"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  postgres_data:

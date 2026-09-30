@@ -1,0 +1,52 @@
+# Complete production deployment, run on the VPS from /opt/persona-studio.
+# Secrets live in /opt/persona-studio/.env (POSTGRES_PASSWORD, JWT_SECRET,
+# GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, EXTENSION_REDIRECT_PREFIXES,
+# ALLOWED_ORIGINS, PUBLIC_BASE_URL). The api image is built by the
+# Build & Deploy workflow and pushed to GHCR tagged with the commit SHA.
+services:
+  db:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_DB: persona_studio
+      POSTGRES_USER: persona
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U persona -d persona_studio"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    image: ${IMAGE:-ghcr.io/sohalierum75-sys/persona-studio-api}:${IMAGE_TAG:-latest}
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      ALLOW_TEST_LOGIN: "false"
+      DATABASE_URL: postgresql://persona:${POSTGRES_PASSWORD}@db:5432/persona_studio?schema=public
+      STATIC_DIR: /app/web
+      PORT: 3210
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

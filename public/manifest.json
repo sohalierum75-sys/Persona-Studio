@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Persona Studio",
+  "version": "1.1.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5MFJEwF8hiGyOVR6oD0Gx43tP3jQ3XFcv3cBNwDWjfUNioTQgmYWpqdXz4X6lNlTAs9Y1IZVZlcNwS8tkGy5y+r44Ftde2PvVdiuW+mug3M8WEJucmGNP1LsAY9uA83F4LVewPltYqbkX9n1B0oCpxgCwMpH1V7DC/SEVC3dC/kdN0MR17vMRqdbwRy8ObjV8jmfV3b068xB1Hp27fcmijGXBkuLb6ewxVCyT+1EYQaBYt5iODqYl2U7cP8ObchipdgAKoR3NKsqefdP4KAvvQ+pZJGPKgPRFzx+VdXjdTzpvsWiExKUVZq87UTFIHFHH73J+juZSGtnT/eIIvj0iQIDAQAB",
+  "description": "One character. Every scene. A character workspace for AI-influencer and recurring-character creators.",
+  "action": {
+    "default_title": "Open Persona Studio Panel"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "tabs",
+    "identity"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "host_permissions": [
+    "http://localhost:3210/*"
+  ]
+}

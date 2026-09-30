@@ -1,0 +1,107 @@
+// ============================================================
+// Persona Studio API — Prisma schema
+// ============================================================
+// Every user-owned record lives in `Entity` as a versioned JSON
+// document (kind + id + owner). This keeps the client data model
+// authoritative while the server enforces ownership, versioning,
+// soft-deletes and per-record history.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  emailVerified Boolean        @default(false)
+  name          String
+  avatarUrl     String?
+  googleId      String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  lastLoginAt   DateTime?
+  refreshTokens RefreshToken[]
+  authCodes     AuthCode[]
+  entities      Entity[]
+}
+
+/// Long-lived session token (stored hashed; rotated on every refresh)
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  replacedById String?
+
+  @@index([userId])
+}
+
+/// Single-use OAuth handshake code (client exchanges it for tokens)
+model AuthCode {
+  id        String   @id @default(uuid())
+  codeHash  String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+  challenge String
+
+  @@index([userId])
+}
+
+model OperationReceipt {
+  userId String
+  opId String
+  fingerprint String
+  result Json
+  createdAt DateTime @default(now())
+  @@id([userId, opId])
+}
+
+/// One user-owned record. `kind` ∈ character | episode | scene | outfit |
+/// location | asset | usageRecord | continuityGroup | settings
+model Entity {
+  id        String    // client-generated UUID — stable across retries/migration
+  userId    String
+  kind      String
+  data      Json
+  version   Int       @default(1)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @db.Timestamptz(3)
+  deletedAt DateTime?
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions EntityVersion[]
+
+  @@id([userId, id])
+  @@index([userId, kind])
+  @@index([userId, updatedAt])
+}
+
+/// Immutable per-record version history (powers conflict review +
+/// prompt/version history). Trimmed to the newest HISTORY_KEEP_VERSIONS.
+model EntityVersion {
+  id       String   @id @default(uuid())
+  userId   String
+  entityId String
+  kind     String
+  version  Int
+  data     Json
+  savedAt  DateTime @default(now())
+
+  entity Entity @relation(fields: [userId, entityId], references: [userId, id], onDelete: Cascade)
+
+  @@unique([userId, entityId, version])
+  @@index([userId, entityId])
+}
