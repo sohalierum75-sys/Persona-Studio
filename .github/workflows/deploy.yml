@@ -72,9 +72,14 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          # Normalize the secret: strip CR, expand literal \n escapes
+          printf '%s' "$VPS_SSH_KEY" | tr -d '\r' | sed 's/\\n/\n/g' > ~/.ssh/deploy_key
           chmod 700 ~/.ssh
           chmod 600 ~/.ssh/deploy_key
+          if ! ssh-keygen -y -P "" -f ~/.ssh/deploy_key > /dev/null 2>&1; then
+            echo "::error::VPS_SSH_KEY is not a valid OpenSSH private key. Paste the full key file contents (BEGIN...END lines, real newlines — no quotes, no .ppk)."
+            exit 1
+          fi
           SSH="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes $VPS_USER@$VPS_HOST"
           # Sync compose file + Caddyfile + deploy script into the dedicated
           # deploy directory (/opt/persona-studio) — other VPS services untouched.
