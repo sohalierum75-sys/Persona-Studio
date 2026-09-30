@@ -3,6 +3,7 @@ name: Build & Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # Never overlap deployments; queued runs deploy the newest SHA only via latest checks
 concurrency:
