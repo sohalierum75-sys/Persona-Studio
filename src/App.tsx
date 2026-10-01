@@ -37,13 +37,7 @@ function StudioRoot() {
         fontSize: 14,
       }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 40, height: 40,
-            background: "linear-gradient(135deg,#A99BFF,#7B6FE8)",
-            borderRadius: 12,
-            margin: "0 auto 16px",
-            animation: "spin 1s linear infinite",
-          }} />
+          <div className="loading-mark" />
           <p>Loading Persona Studio…</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

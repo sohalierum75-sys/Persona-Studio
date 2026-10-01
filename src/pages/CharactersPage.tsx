@@ -4,6 +4,7 @@ import { Plus, User } from "lucide-react";
 import { useStudio } from "../store";
 import type { Character } from "../types";
 import NewCharacterModal from "../components/studio/NewCharacterModal";
+import { PageHeading } from "../components/ui/Surface";
 
 export default function CharactersPage() {
   const { characters, referenceAssets, episodes } = useStudio();
@@ -23,15 +24,11 @@ export default function CharactersPage() {
 
   return (
     <div>
-      <div className="section-header">
-        <div>
-          <h1>Characters</h1>
-          <p style={{ marginTop: 4 }}>Your recurring cast — one character, every scene.</p>
-        </div>
+      <PageHeading title="Characters" description="Your recurring cast. Every detail, ready for the next scene." action={
         <button className="btn btn-primary" onClick={() => setShowNew(true)}>
           <Plus size={16} /> New Character
         </button>
-      </div>
+      } />
 
       {characters.length === 0 ? (
         <div className="empty-state">

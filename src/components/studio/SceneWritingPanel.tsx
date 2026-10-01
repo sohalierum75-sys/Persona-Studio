@@ -246,7 +246,7 @@ export default function SceneWritingPanel({
             ) : (
               <input className="input" value={scene.outfitOverride ?? ""}
                 onChange={e => update({ outfitOverride: e.target.value, outfitId: undefined })}
-                placeholder="Describe the outfit freely\u2026" />
+                placeholder="Describe the outfit freely…" />
             )}
           </div>
         )}
@@ -279,7 +279,7 @@ export default function SceneWritingPanel({
             </div>
             <div className="form-group" style={{ marginTop:10 }}>
               <label className="form-label">Notes</label>
-              <textarea className="textarea" rows={2} value={scene.notes ?? ""} onChange={e => update({ notes: e.target.value })} placeholder="Director notes, mood references\u2026" />
+              <textarea className="textarea" rows={2} value={scene.notes ?? ""} onChange={e => update({ notes: e.target.value })} placeholder="Director notes, mood references…" />
             </div>
           </div>
         )}
@@ -310,7 +310,7 @@ export default function SceneWritingPanel({
               <label className="form-label" style={{ margin:0 }}>Dialogue / caption</label>
               <button className="btn btn-ghost btn-sm" style={{ padding:"2px 6px" }} onClick={() => { setShowDialogue(false); update({ dialogue:"" }); }}><X size={12}/></button>
             </div>
-            <textarea className="textarea" rows={2} value={scene.dialogue ?? ""} onChange={e => update({ dialogue: e.target.value })} placeholder='What is she saying? Or on-screen caption\u2026'/>
+            <textarea className="textarea" rows={2} value={scene.dialogue ?? ""} onChange={e => update({ dialogue: e.target.value })} placeholder="Dialogue or on-screen caption…"/>
           </div>
         )}
 
@@ -318,10 +318,10 @@ export default function SceneWritingPanel({
 
       {/* ── Bottom action bar ─────────────────────────────────────────── */}
       <div className="swp-bar">
-        <span style={{ fontSize:11, color:"var(--text-muted)", userSelect:"none" }}>Ctrl+\u21b5 = Build Prompt</span>
+        <span style={{ fontSize:11, color:"var(--text-muted)", userSelect:"none" }}>Ctrl + Enter to build</span>
         <button className="btn btn-primary" style={{ minWidth:140, justifyContent:"center" }}
           onClick={onBuildPrompt} disabled={isBuilding}>
-          {isBuilding ? <><span className="swp-spinner"/> Building\u2026</> : <><span style={{ fontSize:15 }}>\u2728</span> Build Prompt</>}
+          {isBuilding ? <><span className="swp-spinner"/> Building…</> : <>Build Prompt</>}
         </button>
       </div>
     </div>

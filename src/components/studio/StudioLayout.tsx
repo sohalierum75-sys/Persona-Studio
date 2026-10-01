@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
-  Users, Film, Shirt, MapPin, Clock, Settings,
-  ChevronLeft, Menu, Moon, Sun, Search,
+  Users, Shirt, MapPin, Clock, Settings,
+  Menu, Moon, Sun, Search,
 } from "lucide-react";
 import { useStudio } from "../../store";
 import SyncStatus from "../auth/SyncStatus";
 import AccountMenu from "../auth/AccountMenu";
+import Brand from "../ui/Brand";
 
 interface Props { children: React.ReactNode; }
 
@@ -19,9 +20,8 @@ const NAV = [
 ];
 
 export default function StudioLayout({ children }: Props) {
-  const { settings, saveSettings, characters, episodes } = useStudio();
-  const [navOpen, setNavOpen] = useState(true);
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const { settings, saveSettings, characters } = useStudio();
+  const [navOpen, setNavOpen] = useState(() => window.innerWidth > 800);
   const [searchQuery, setSearchQuery] = useState("");
 
   function toggleTheme() {
@@ -30,21 +30,23 @@ export default function StudioLayout({ children }: Props) {
 
   return (
     <div className="studio-layout">
+      <a className="skip-link" href="#main-content" onClick={e => { e.preventDefault(); document.getElementById('main-content')?.focus(); }}>Skip to workspace</a>
       {/* Topbar */}
       <header className="topbar">
         <button
           className="btn btn-icon"
           onClick={() => setNavOpen((v) => !v)}
           aria-label="Toggle navigation"
+          aria-expanded={navOpen}
+          aria-controls="studio-navigation"
         >
           <Menu size={18} />
         </button>
         <a href="#/" className="topbar-logo">
-          <img src="/logo.png" alt="" className="topbar-logo-icon" aria-hidden="true" />
-          <span>Persona Studio</span>
+          <Brand />
         </a>
         <div className="topbar-spacer" />
-        <div style={{ position: "relative" }}>
+        <div className="topbar-search" style={{ position: "relative" }}>
           <Search
             size={14}
             style={{
@@ -71,7 +73,11 @@ export default function StudioLayout({ children }: Props) {
       <div className="studio-body">
         {/* Left Nav */}
         {navOpen && (
-          <nav className="studio-nav" aria-label="Main navigation">
+          <>
+          <button className="nav-dismiss" onClick={() => setNavOpen(false)} aria-label="Close navigation" />
+          <nav id="studio-navigation" className="studio-nav" aria-label="Main navigation"
+            onClick={e => { if (window.innerWidth <= 800 && (e.target as HTMLElement).closest('a')) setNavOpen(false); }}
+            onKeyDown={e => { if (e.key === 'Escape' && window.innerWidth <= 800) setNavOpen(false); }}>
             <div className="nav-section">
               <div className="nav-section-label">Workspace</div>
               {NAV.map(({ to, icon: Icon, label }) => (
@@ -99,7 +105,7 @@ export default function StudioLayout({ children }: Props) {
                   >
                     <div style={{
                       width: 22, height: 22, borderRadius: 6,
-                      background: "linear-gradient(135deg, #A99BFF22, #7B6FE822)",
+                      background: "var(--accent-dim)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 11, color: "var(--accent)", flexShrink: 0,
                     }}>
@@ -111,10 +117,11 @@ export default function StudioLayout({ children }: Props) {
               </div>
             )}
           </nav>
+          </>
         )}
 
         {/* Main content */}
-        <main className="studio-main" id="main-content">
+        <main className="studio-main" id="main-content" tabIndex={-1}>
           {children}
         </main>
       </div>

@@ -1,95 +1,4 @@
-/* ============================================================
-   Persona Studio — Design System
-   ============================================================ */
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap");
-
-/* ---- CSS Custom Properties (Tokens) ---- */
-:root {
-  /* Colors — Dark Theme */
-  --bg-base: #101114;
-  --bg-card: #191B21;
-  --bg-card-hover: #1F2229;
-  --bg-input: #14161C;
-  --bg-elevated: #22252D;
-
-  --accent: #A99BFF;
-  --accent-dim: rgba(169, 155, 255, 0.15);
-  --accent-glow: rgba(169, 155, 255, 0.25);
-
-  --text-primary: #F4F4F7;
-  --text-secondary: #A2A7B5;
-  --text-muted: #5E6473;
-  --text-accent: #A99BFF;
-
-  --border: rgba(255,255,255,0.08);
-  --border-accent: rgba(169, 155, 255, 0.3);
-  --divider: rgba(255,255,255,0.05);
-
-  --success: #52D9A0;
-  --success-bg: rgba(82, 217, 160, 0.12);
-  --warning: #FFBA52;
-  --warning-bg: rgba(255, 186, 82, 0.12);
-  --error: #FF6B6B;
-  --error-bg: rgba(255, 107, 107, 0.12);
-
-  /* Radius */
-  --radius-card: 16px;
-  --radius-md: 12px;
-  --radius-sm: 10px;
-  --radius-xs: 8px;
-  --radius-full: 9999px;
-
-  /* Spacing */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 20px;
-  --sp-6: 24px;
-  --sp-8: 32px;
-  --sp-10: 40px;
-  --sp-12: 48px;
-
-  /* Transitions */
-  --t-fast: 150ms ease;
-  --t-base: 200ms ease;
-  --t-slow: 300ms ease;
-  --t-spring: 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 24px rgba(0,0,0,0.5);
-  --shadow-glow: 0 0 20px rgba(169,155,255,0.15);
-  --shadow-card: 0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.4);
-
-  /* Nav */
-  --nav-width: 220px;
-  --inspector-width: 340px;
-  --topbar-height: 60px;
-  --panel-width: 380px;
-  
-  /* Font */
-  --font: "Inter", "Noto Sans Sinhala", system-ui, sans-serif;
-}
-
-/* ---- Light Theme ---- */
-[data-theme="light"] {
-  --bg-base: #F5F5F8;
-  --bg-card: #FFFFFF;
-  --bg-card-hover: #F0F0F6;
-  --bg-input: #EEEEF4;
-  --bg-elevated: #FFFFFF;
-  --text-primary: #111219;
-  --text-secondary: #5A6075;
-  --text-muted: #9098B0;
-  --border: rgba(0,0,0,0.08);
-  --border-accent: rgba(100, 80, 220, 0.3);
-  --divider: rgba(0,0,0,0.05);
-  --accent: #6A58E8;
-  --accent-dim: rgba(106, 88, 232, 0.1);
-  --shadow-card: 0 1px 0 rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08);
-}
+@import "./styles/tokens.css";
 
 /* ---- Base Reset ---- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -100,7 +9,7 @@ body {
   font-family: var(--font);
   background: var(--bg-base);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
@@ -203,7 +112,7 @@ p { color: var(--text-secondary); }
 
 .topbar-logo-icon {
   width: 28px; height: 28px;
-  background: linear-gradient(135deg, #A99BFF 0%, #7B6FE8 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%);
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   font-size: 14px;
@@ -330,12 +239,13 @@ img.topbar-logo-icon {
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-primary {
-  background: linear-gradient(135deg, #A99BFF 0%, #7B6FE8 100%);
+  background: var(--accent);
   color: #fff;
-  box-shadow: 0 2px 12px rgba(169,155,255,0.3);
+  box-shadow: 0 2px 12px rgba(59,130,246,0.3);
 }
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 20px rgba(169,155,255,0.5);
+  background: var(--accent-hover);
+  box-shadow: 0 4px 20px rgba(59,130,246,0.45);
   transform: translateY(-1px);
 }
 .btn-secondary {
@@ -507,9 +417,10 @@ img.topbar-logo-icon {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: var(--sp-4);
-  font-size: 12px; color: var(--text-secondary);
-  line-height: 1.8; white-space: pre-wrap; font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 13px; color: var(--text-primary);
+  line-height: 1.7; white-space: pre-wrap; font-family: "SF Mono", "Fira Code", monospace;
   max-height: 200px; overflow-y: auto;
+  user-select: text;
 }
 .prompt-preview--clickable {
   cursor: pointer;
@@ -686,7 +597,9 @@ img.topbar-logo-icon {
 /* ---- Toolbar (floating) ---- */
 .floating-toolbar {
   position: fixed; bottom: var(--sp-6); left: 50%; transform: translateX(-50%);
-  background: rgba(25, 27, 33, 0.85); backdrop-filter: blur(12px) saturate(180%);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-full);
   padding: var(--sp-2) var(--sp-3);
@@ -736,6 +649,8 @@ img.topbar-logo-icon {
   .grid-2 { grid-template-columns: 1fr; }
   .grid-3 { grid-template-columns: 1fr 1fr; }
   .grid-4 { grid-template-columns: 1fr 1fr; }
+  /* Prevent iOS zoom-on-focus in the compact side panel */
+  .input, .select { font-size: 16px; height: auto; min-height: 38px; }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1134,7 +1049,7 @@ img.topbar-logo-icon {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
-  box-shadow: 0 2px 10px rgba(169,155,255,0.35);
+  box-shadow: 0 2px 10px rgba(59,130,246,0.35);
 }
 
 /* Expanded chip control panel */
@@ -1402,7 +1317,9 @@ img.topbar-logo-icon {
   top: calc(100% + 8px);
   right: 0;
   width: 260px;
-  background: var(--bg-card);
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-md);
   box-shadow: 0 16px 48px rgba(0,0,0,0.4);

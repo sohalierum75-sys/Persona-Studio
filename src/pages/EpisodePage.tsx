@@ -192,7 +192,7 @@ export default function EpisodePage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display:"flex", height:"calc(100vh - 60px)", overflow:"hidden" }}>
+    <div className="episode-layout">
 
       {/* LEFT: Scene list */}
       <div className="ep-sidebar">

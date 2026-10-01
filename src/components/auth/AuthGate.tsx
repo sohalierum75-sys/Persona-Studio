@@ -12,6 +12,7 @@ import { API_CONFIGURED } from "../../lib/config";
 import { useStudio } from "../../store";
 import MigrationPrompt from "./MigrationPrompt";
 import ConflictReview from "./ConflictReview";
+import Brand from "../ui/Brand";
 
 interface Props {
   children: React.ReactNode;
@@ -100,52 +101,17 @@ export function SignInScreen({
   loading, error, onSignIn,
 }: { loading: boolean; error: string | null; onSignIn: () => void }) {
   return (
-    <div style={{
-      display:"flex", alignItems:"center", justifyContent:"center",
-      minHeight:"100vh", background:"var(--bg-base)",
-      fontFamily:"var(--font)",
-    }}>
-      <div style={{
-        width:"100%", maxWidth:380, padding:"40px 36px",
-        background:"var(--bg-card)",
-        border:"1px solid var(--border)",
-        borderRadius:"var(--radius-lg)",
-        boxShadow:"0 24px 64px rgba(0,0,0,0.4)",
-        display:"flex", flexDirection:"column", gap:24,
-        textAlign:"center",
-      }}>
+    <div className="auth-page">
+      <div className="surface auth-card">
         {/* Logo */}
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
-          <img
-            src="/logo.png"
-            alt=""
-            aria-hidden="true"
-            style={{ width:52, height:52, objectFit:"contain", display:"block", margin:"0 auto" }}
-          />
-          <div>
-            <div style={{ fontSize:20, fontWeight:800, color:"var(--text-primary)", letterSpacing:"-0.02em" }}>
-              Persona Studio
-            </div>
-            <div style={{ fontSize:12, color:"var(--text-muted)", marginTop:2 }}>
-              One character. Every scene.
-            </div>
-          </div>
-        </div>
+        <div className="auth-brand"><Brand /><p>One character. Every scene.</p></div>
 
         {/* Tagline */}
-        <div style={{ fontSize:13, color:"var(--text-secondary)", lineHeight:1.6 }}>
-          Sign in to sync your characters, scenes, and prompts across all your devices.
-        </div>
+        <div><h1>Welcome to your Studio.</h1><p>Sign in to keep your characters, scenes, and prompts together across devices.</p></div>
 
         {/* Error */}
         {error && (
-          <div role="alert" style={{
-            padding:"10px 14px",
-            background:"rgba(255,107,107,0.1)",
-            border:"1px solid rgba(255,107,107,0.3)",
-            borderRadius:"var(--radius-sm)",
-            fontSize:12, color:"var(--error)", textAlign:"left",
-          }}>
+          <div role="alert" className="auth-error">
             {error}
           </div>
         )}
@@ -154,17 +120,7 @@ export function SignInScreen({
         <button
           onClick={onSignIn}
           disabled={loading}
-          style={{
-            display:"flex", alignItems:"center", justifyContent:"center", gap:10,
-            padding:"12px 20px",
-            background: loading ? "var(--bg-elevated)" : "#fff",
-            color:"#1f1f1f",
-            border:"1px solid rgba(0,0,0,0.15)",
-            borderRadius:"var(--radius-sm)",
-            fontSize:14, fontWeight:600, cursor: loading ? "default" : "pointer",
-            transition:"all var(--t-fast)",
-            opacity: loading ? 0.7 : 1,
-          }}
+          className="btn btn-secondary auth-google"
         >
           {loading ? (
             <span style={{ fontSize:13, color:"var(--text-muted)" }}>Signing in…</span>
@@ -182,10 +138,11 @@ export function SignInScreen({
           )}
         </button>
 
-        <div style={{ fontSize:11, color:"var(--text-muted)", lineHeight:1.5 }}>
+        <p className="auth-footnote">
           Your data is stored privately and never shared.
           You can use the app offline — changes sync when you reconnect.
-        </div>
+        </p>
+        <a className="auth-back" href="#/">Back to Persona Studio</a>
       </div>
     </div>
   );
@@ -195,11 +152,7 @@ export function LoadingScreen({ message }: { message: string }) {
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", background:"var(--bg-base)" }}>
       <div style={{ textAlign:"center" }}>
-        <div style={{
-          width:40, height:40, background:"linear-gradient(135deg,#A99BFF,#7B6FE8)",
-          borderRadius:12, margin:"0 auto 16px",
-          animation:"spin 1s linear infinite",
-        }}/>
+        <div className="loading-mark" />
         <p style={{ color:"var(--text-muted)", fontSize:13 }}>{message}</p>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

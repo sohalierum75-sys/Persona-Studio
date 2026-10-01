@@ -49,7 +49,7 @@ export default function ImportPromptsModal({ scenes, defaultSceneId, onImport, o
   return (
     <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal" role="dialog" aria-modal="true" aria-label="Import prompts"
-        style={{ maxWidth: 580, width: "100%", display: "flex", flexDirection: "column", gap: 0 }}>
+        style={{ maxWidth: 580, width: "calc(100vw - 32px)", padding: 24, display: "flex", flexDirection: "column", gap: 0 }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>

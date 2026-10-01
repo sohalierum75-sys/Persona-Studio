@@ -98,11 +98,11 @@ export default function CharacterEditorPage() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
+      <div className="character-editor-header">
         <button className="btn btn-ghost" onClick={() => navigate("/characters")}>
           <ArrowLeft size={16} /> Back
         </button>
-        <div style={{ flex: 1 }}>
+        <div className="character-editor-name">
           <input
             className="input"
             style={{ fontSize: 22, fontWeight: 700, height: 44, border: "none", background: "transparent", padding: "0 4px" }}
@@ -127,7 +127,7 @@ export default function CharacterEditorPage() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 32 }}>
+      <div className="character-editor-grid">
         {/* Left — Reference Images */}
         <div>
           {/* Main portrait */}

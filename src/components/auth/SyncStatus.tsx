@@ -44,6 +44,7 @@ export default function SyncStatus() {
   return (
     <button
       className="sync-status-btn"
+      aria-label={`${label()}${isClickable ? '. Retry sync' : ''}`}
       onClick={isClickable ? () => void reconcile({force:true}) : undefined}
       style={{ cursor: isClickable ? "pointer" : "default" }}
       title={error ?? (lastSynced ? `Last synced: ${new Date(lastSynced).toLocaleTimeString()}` : undefined)}

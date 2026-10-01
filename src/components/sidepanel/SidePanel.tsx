@@ -6,6 +6,7 @@ import type { Scene } from "../../types";
 import AuthGate from "../auth/AuthGate";
 import SyncStatus from "../auth/SyncStatus";
 import AccountMenu from "../auth/AccountMenu";
+import Brand from "../ui/Brand";
 
 /** Clipboard write with execCommand fallback for non-secure contexts. */
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -129,14 +130,15 @@ function SidePanelInner() {
     <div className="sidepanel-root">
       {/* Header */}
       <div className="sidepanel-header">
-        <div style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>✦ Persona Studio</div>
+        <div className="sidepanel-brand"><Brand /></div>
         <SyncStatus />
         <button
           className="btn btn-ghost btn-sm"
           onClick={openStudio}
           title="Open full Studio"
+          aria-label="Open full Studio"
         >
-          <ExternalLink size={14} /> Studio
+          <ExternalLink size={14} /> <span className="sidepanel-studio-label">Studio</span>
         </button>
         <AccountMenu />
       </div>

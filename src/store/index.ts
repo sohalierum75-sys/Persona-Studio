@@ -90,7 +90,7 @@ interface StudioState {
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: "dark",
+  theme: "light",
   continuity: {
     avoidOutfitColorRepeat: true,
     avoidOutfitExactRepeat: true,

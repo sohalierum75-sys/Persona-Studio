@@ -111,7 +111,8 @@ export default function WardrobePage() {
                   )}
                   <div className="wardrobe-tags">
                     <span className="chip">{o.garmentType}</span>
-                    <span className="chip" style={{ background: `${COLOR_HEX[o.colorFamily]}22`, color: COLOR_HEX[o.colorFamily] }}>
+                    <span className="chip" style={{ color: "var(--text-primary)" }}>
+                      <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: COLOR_HEX[o.colorFamily], border: "1px solid var(--border)" }} />
                       {o.colorFamily}
                     </span>
                   </div>
