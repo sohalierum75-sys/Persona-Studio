@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { ArrowRight, Check, Copy, Download, Film, Layers, LockKeyhole, MapPin, Menu, Monitor, Puzzle, Shirt, UserRound, X } from "lucide-react";
 import Brand from "../components/ui/Brand";
 import { Surface } from "../components/ui/Surface";
@@ -15,6 +16,9 @@ const SAMPLE_CHARACTER = { name: "Maya Chen", identityFields: [
 const SCENES = ["Flower shop", "Rooftop garden", "Night market"];
 const ACTIONS = ["Maya selects fresh flowers in a small flower shop, lit by soft morning light.", "Maya walks through a rooftop garden at golden hour.", "Maya browses a night market filled with warm lantern light."];
 const TABS = ["Overview", "Characters", "Scene prompts", "Continuity", "Extension"];
+// The production image always packages this versioned path. `latest.json` below
+// replaces it when a newer extension version is deployed.
+const EXTENSION_FALLBACK_URL = "/download/persona-studio-extension-v1.1.0.zip";
 const FAQ = [
   ["Does Persona Studio generate images or videos?", "Persona Studio organizes references and prepares prompts. Copy your prompt into the image or video generation tool you already use."],
   ["Will my character look exactly the same every time?", "Saved identity details and references help keep your instructions consistent. The final result depends on your generation model, settings, and reference handling."],
@@ -28,14 +32,16 @@ export default function HomePage() {
   const [outfit, setOutfit] = useState("Cream linen set");
   const [engine, setEngine] = useState<EngineId>("midjourney");
   const [copied, setCopied] = useState("");
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string>(EXTENSION_FALLBACK_URL);
   const [menuOpen, setMenuOpen] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
   const [showFaq, setShowFaq] = useState(false);
   useEffect(() => {
     let cancelled = false;
     fetch("/download/latest.json").then(r => r.ok ? r.json() : null).then(meta => {
-      if (!cancelled && meta?.file) setDownloadUrl(`/download/${meta.file}`);
+      if (!cancelled && typeof meta?.file === "string" && meta.file.endsWith(".zip")) {
+        setDownloadUrl(`/download/${meta.file}`);
+      }
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -54,30 +60,30 @@ export default function HomePage() {
   return <div className="hp-root" data-theme="light">
     <a className="skip-link" href="#home-main" onClick={e => { e.preventDefault(); document.getElementById('home-main')?.focus(); }}>Skip to content</a>
     <header className="hp-header">
-      <a href="#/" className="hp-logo" aria-label="Persona Studio home"><Brand /></a>
+      <Link to="/" className="hp-logo" aria-label="Persona Studio home"><Brand /></Link>
       <nav className="hp-nav" aria-label="Page navigation">
         <button onClick={() => showcase("Characters")}>Characters</button>
         <button onClick={() => showcase("Scene prompts")}>Scene prompts</button>
         <button onClick={() => showcase("Continuity")}>Continuity</button>
         <button onClick={() => showcase("Extension")}>Extension <ArrowRight size={12} /></button>
       </nav>
-      <div className="hp-header-actions"><a href="#/characters" className="btn btn-ghost">Sign in</a><a href="#/characters" className="btn btn-secondary">Open Studio <ArrowRight size={14} /></a></div>
+      <div className="hp-header-actions"><a href={downloadUrl} download className="btn btn-ghost" id="header-download-extension"><Download size={14} /> Download extension</a><Link to="/characters" className="btn btn-ghost">Sign in</Link><Link to="/characters" className="btn btn-secondary">Open Studio <ArrowRight size={14} /></Link></div>
       <button className="btn btn-icon hp-menu" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="Toggle navigation">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
     </header>
-    {menuOpen && <nav className="hp-mobile-nav" aria-label="Mobile navigation">{TABS.slice(1).map(t => <button className="btn btn-ghost" key={t} onClick={() => showcase(t)}>{t}</button>)}<a className="btn btn-primary" href="#/characters">Open Studio</a></nav>}
+    {menuOpen && <nav className="hp-mobile-nav" aria-label="Mobile navigation">{TABS.slice(1).map(t => <button className="btn btn-ghost" key={t} onClick={() => showcase(t)}>{t}</button>)}<Link className="btn btn-primary" to="/characters">Open Studio</Link></nav>}
     <main id="home-main" tabIndex={-1}>
       <section className="hp-hero">
         <span className="hp-announcement"><Layers size={13} /> Your characters. A connected workflow.</span>
         <h1>One character. Every scene.<br /><span>A little more continuity.</span></h1>
         <p>Keep your cast, scene prompts, and creative details together.<br className="hp-desktop-break" /> Move from your Studio to your favorite AI tool, without losing the thread.</p>
-        <div className="hp-hero-actions"><a href="#/characters" className="btn btn-primary" id="hero-start-creating">Start creating <ArrowRight size={15} /></a><button className="btn btn-secondary" onClick={() => showcase()} id="hero-try-demo">Explore the Studio</button></div>
+        <div className="hp-hero-actions"><Link to="/characters" className="btn btn-primary" id="hero-start-creating">Start creating <ArrowRight size={15} /></Link><a href={downloadUrl} download className="btn btn-secondary" id="hero-download-extension"><Download size={15} /> Download extension</a><button className="btn btn-secondary" onClick={() => showcase()} id="hero-try-demo">Explore the Studio</button></div>
         <span className="hp-hero-note"><Monitor size={13} /> A full workspace. A companion Chrome extension.</span>
       </section>
       <section className="hp-showcase" id="interactive-demo" aria-label="Interactive product preview">
         <div className="hp-showcase-toolbar"><div className="hp-segments" role="group" aria-label="Preview category">{TABS.map(t => <button key={t} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}</div><span className="hp-sample-label"><span /> Interactive sample · no account needed</span></div>
         <div className={`hp-showcase-grid ${tab !== "Overview" ? "hp-showcase-focused" : ""}`}>
           {visible("Characters") && <div className="hp-preview-column">
-            <Surface><div className="hp-card-heading"><span className="hp-icon"><UserRound size={18} /></span><span className="chip">Character profile</span></div><h2>Maya Chen</h2><p className="hp-small">Your recurring cast starts here.</p><div className="hp-identity">{SAMPLE_CHARACTER.identityFields.map(f => <div key={f.key}><span>{f.label}</span><strong>{f.value}<LockKeyhole size={12} /></strong></div>)}</div><div className="hp-card-footer"><span className="hp-small">Identity details, kept together</span><a href="#/characters" aria-label="Create your character" className="btn btn-icon"><ArrowRight size={17} /></a></div></Surface>
+            <Surface><div className="hp-card-heading"><span className="hp-icon"><UserRound size={18} /></span><span className="chip">Character profile</span></div><h2>Maya Chen</h2><p className="hp-small">Your recurring cast starts here.</p><div className="hp-identity">{SAMPLE_CHARACTER.identityFields.map(f => <div key={f.key}><span>{f.label}</span><strong>{f.value}<LockKeyhole size={12} /></strong></div>)}</div><div className="hp-card-footer"><span className="hp-small">Identity details, kept together</span><Link to="/characters" aria-label="Create your character" className="btn btn-icon"><ArrowRight size={17} /></Link></div></Surface>
             <Surface><div className="hp-card-heading"><h3><Shirt size={16} /> Wardrobe</h3><span className="hp-small">Sample outfits</span></div><label className="form-label" htmlFor="sample-outfit">Choose a look</label><select id="sample-outfit" className="select" value={outfit} onChange={e => { setOutfit(e.target.value); setCopied(""); }}><option>Cream linen set</option><option>Lavender wrap dress</option><option>Deep blue casual outfit</option></select><p className="hp-small hp-card-caption">Reusable outfits. Fewer repeated details.</p></Surface>
             <div className="hp-inline-note"><MapPin size={18} /><div><strong>A place for every story</strong><p>Save settings, lighting, and mood in your location library.</p></div></div>
           </div>}
@@ -87,8 +93,8 @@ export default function HomePage() {
             <div className="hp-inline-note"><Layers size={18} /><div><strong>More scenes. Less setup.</strong><p>Paste descriptions, review the details, and build an episode in bulk.</p></div></div>
           </div>}
           {(visible("Extension") || visible("Continuity")) && <div className="hp-preview-column">
-            {visible("Extension") && <Surface className="hp-extension-card"><div className="hp-card-heading"><span className="hp-icon"><Puzzle size={18} /></span><span className="chip">Chrome extension</span></div><h2>Your Studio, alongside you.</h2><p>Choose a character, episode, and scene. Copy the same prompt into the tool you already use.</p><div className="hp-extension-preview"><div><Brand /><span className="hp-small">Sample</span></div><span className="hp-small">Character / Episode</span><strong>Maya Chen <span>·</span> A day in the city</strong><span className="hp-small">Selected scene</span><div className="hp-extension-scene"><Film size={14} />{SCENES[sceneIndex]}<Check size={14} /></div></div>{downloadUrl ? <a className="btn btn-primary" href={downloadUrl} download id="hero-download-extension"><Download size={14} /> Download extension</a> : <button className="btn btn-secondary" disabled title="The extension download is not available yet">Download coming soon</button>}<button className="hp-text-button" onClick={() => setInstallOpen(!installOpen)} aria-expanded={installOpen}>How to install <ArrowRight size={12} /></button>{installOpen && <div className="hp-install"><ol><li>Download and extract the extension ZIP.</li><li>Open <code>chrome://extensions</code>.</li><li>Enable Developer mode and choose Load unpacked.</li><li>Select the extracted folder, open Persona Studio, and sign in.</li></ol><button className="btn btn-secondary btn-sm" onClick={() => copy("chrome://extensions", "Address copied")}>{copied === "Address copied" ? "Copied" : "Copy extensions address"}</button></div>}</Surface>}
-            {visible("Continuity") && <Surface><div className="hp-card-heading"><span className="hp-icon hp-icon-warm"><Shirt size={18} /></span><span className="hp-small">Continuity preview</span></div><h3>Catch the details before you create.</h3><p className="hp-card-caption">Studio flags repeated outfits and location categories across episodes. Review a warning, keep the choice, or try another look.</p><div className="hp-warning-sample">Example: this outfit appeared in an earlier episode.</div><a href="#/characters" className="btn btn-secondary">Plan your first episode <ArrowRight size={14} /></a></Surface>}
+            {visible("Extension") && <Surface className="hp-extension-card"><div className="hp-card-heading"><span className="hp-icon"><Puzzle size={18} /></span><span className="chip">Chrome extension</span></div><h2>Your Studio, alongside you.</h2><p>Choose a character, episode, and scene. Copy the same prompt into the tool you already use.</p><div className="hp-extension-preview"><div><Brand /><span className="hp-small">Sample</span></div><span className="hp-small">Character / Episode</span><strong>Maya Chen <span>·</span> A day in the city</strong><span className="hp-small">Selected scene</span><div className="hp-extension-scene"><Film size={14} />{SCENES[sceneIndex]}<Check size={14} /></div></div><a className="btn btn-primary" href={downloadUrl} download><Download size={14} /> Download extension</a><button className="hp-text-button" onClick={() => setInstallOpen(!installOpen)} aria-expanded={installOpen}>How to install <ArrowRight size={12} /></button>{installOpen && <div className="hp-install"><ol><li>Download and extract the extension ZIP.</li><li>Open <code>chrome://extensions</code>.</li><li>Enable Developer mode and choose Load unpacked.</li><li>Select the extracted folder, open Persona Studio, and sign in.</li></ol><button className="btn btn-secondary btn-sm" onClick={() => copy("chrome://extensions", "Address copied")}>{copied === "Address copied" ? "Copied" : "Copy extensions address"}</button></div>}</Surface>}
+            {visible("Continuity") && <Surface><div className="hp-card-heading"><span className="hp-icon hp-icon-warm"><Shirt size={18} /></span><span className="hp-small">Continuity preview</span></div><h3>Catch the details before you create.</h3><p className="hp-card-caption">Studio flags repeated outfits and location categories across episodes. Review a warning, keep the choice, or try another look.</p><div className="hp-warning-sample">Example: this outfit appeared in an earlier episode.</div><Link to="/characters" className="btn btn-secondary">Plan your first episode <ArrowRight size={14} /></Link></Surface>}
           </div>}
         </div>
         <p className="hp-preview-caption">Sample character and scenes. Prompt previews use the same formatter as Studio; images and videos are generated in your external tool.</p>
@@ -96,6 +102,6 @@ export default function HomePage() {
       </section>
       {showFaq && <section className="hp-faq" id="faq"><h2>A few useful details.</h2>{FAQ.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</section>}
     </main>
-    <footer className="hp-footer"><span>© {new Date().getFullYear()} Persona Studio</span><button className="hp-text-button" onClick={() => setShowFaq(!showFaq)} aria-expanded={showFaq}>Questions & answers</button><button className="hp-text-button" onClick={() => showcase("Extension")}>Chrome extension</button><a href="#/characters">Open Studio <ArrowRight size={13} /></a></footer>
+    <footer className="hp-footer"><span>© {new Date().getFullYear()} Persona Studio</span><button className="hp-text-button" onClick={() => setShowFaq(!showFaq)} aria-expanded={showFaq}>Questions & answers</button><button className="hp-text-button" onClick={() => showcase("Extension")}>Chrome extension</button><Link to="/characters">Open Studio <ArrowRight size={13} /></Link></footer>
   </div>;
 }

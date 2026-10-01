@@ -30,7 +30,9 @@ export function validateClientRedirect(raw: string): string | null {
     const url = new URL(raw);
     if (url.username || url.password || url.hash || url.search) return null;
     if (config.extensionRedirectPrefixes.some(p => new URL(p).href === url.href)) return url.href;
-    if (config.allowedOrigins.includes(url.origin) && ["/", "/index.html"].includes(url.pathname)) return url.href;
+    // Any path on an allowed origin is safe (same-origin, no open redirect) —
+    // sign-in can start from any frontend route (/characters, /settings, …).
+    if (config.allowedOrigins.includes(url.origin)) return url.href;
   } catch { /* invalid URL */ }
   return null;
 }

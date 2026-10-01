@@ -4,6 +4,7 @@
  * so the app works in local-only mode.
  */
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth, getAuthState, initAuth, signInWithGoogle } from "../../lib/auth";
 import { initSync, teardownSync, setOnRemoteChange } from "../../lib/sync";
 import { ensureAccountCache } from "../../lib/accounts";
@@ -142,7 +143,7 @@ export function SignInScreen({
           Your data is stored privately and never shared.
           You can use the app offline — changes sync when you reconnect.
         </p>
-        <a className="auth-back" href="#/">Back to Persona Studio</a>
+        <Link className="auth-back" to="/">Back to Persona Studio</Link>
       </div>
     </div>
   );

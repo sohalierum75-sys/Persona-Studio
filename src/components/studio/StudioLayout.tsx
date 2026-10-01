@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import {
   Users, Shirt, MapPin, Clock, Settings,
   Menu, Moon, Sun, Search,
@@ -42,9 +42,9 @@ export default function StudioLayout({ children }: Props) {
         >
           <Menu size={18} />
         </button>
-        <a href="#/" className="topbar-logo">
+        <Link to="/" className="topbar-logo">
           <Brand />
-        </a>
+        </Link>
         <div className="topbar-spacer" />
         <div className="topbar-search" style={{ position: "relative" }}>
           <Search

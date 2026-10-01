@@ -53,7 +53,7 @@ async function pageFor(t, tokenStatus = 200) {
 
 test('Google callback saves tokens, enters existing Studio and survives refresh', async t => {
   const { page, calls } = await pageFor(t);
-  await page.goto(origin + '/#/characters');
+  await page.goto(origin + '/characters');
   await page.getByRole('button', { name: 'Continue with Google' }).waitFor();
   // Capture the actual outgoing login URL without visiting Google.
   let redirect;
@@ -65,15 +65,19 @@ test('Google callback saves tokens, enters existing Studio and survives refresh'
   });
   await page.getByRole('button', { name: 'Continue with Google' }).click();
   await page.waitForURL('**/api/auth/google/start?**');
-  assert.equal(redirect, origin + '/');
+  assert.equal(redirect, origin + '/characters');
   // Return in the same tab: the original verifier must survive the round trip.
-  await page.goto(origin + '/?code=test-code');
+  await page.goto(origin + '/characters?code=test-code');
   await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
-  assert.equal(new URL(page.url()).hash, '#/characters');
+  assert.equal(new URL(page.url()).pathname, '/characters');
   assert.equal(new URL(page.url()).search, '');
   assert.equal(calls.exchange, 1);
   assert.ok(calls.authenticated > 0);
   assert.ok(await page.evaluate(() => !!localStorage.getItem('ps_auth_tokens') && !sessionStorage.getItem('ps_pkce')));
+  // Signed-in visit to the marketing root bounces to the Studio.
+  await page.goto(origin);
+  await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
+  assert.equal(new URL(page.url()).pathname, '/characters');
   const beforeReload = calls.authenticated;
   await page.reload();
   await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
@@ -103,7 +107,7 @@ test('failed code exchange remains visible when opening Studio', async t => {
   await page.evaluate(() => sessionStorage.setItem('ps_pkce', 'v'.repeat(43)));
   await page.goto(origin + '/?code=expired-code');
   await page.getByText('Invalid or expired code. Please sign in again.', { exact: true }).waitFor({ timeout: 5000 });
-  await page.evaluate(() => { location.hash = '/characters'; });
+  await page.evaluate(() => { history.pushState({}, '', '/characters'); dispatchEvent(new PopStateEvent('popstate')); });
   await page.getByRole('button', { name: 'Continue with Google' }).waitFor();
   assert.match(await page.locator('body').innerText(), /Invalid or expired code/);
 });

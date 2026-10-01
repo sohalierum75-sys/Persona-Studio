@@ -3,6 +3,7 @@
 // ============================================================
 import express from "express";
 import cors from "cors";
+import path from "node:path";
 import { config, validateConfig } from "./config.js";
 import { authRouter } from "./routes/auth.js";
 import { syncRouter, purgeOldTombstones } from "./routes/sync.js";
@@ -46,7 +47,19 @@ export function createApp(): express.Express {
   app.use("/api/events", eventsRouter);
   app.use("/api/assets", requireAuth, assetsRouter);
   app.use("/api/sync", requireAuth, syncRouter);
-  if (process.env.STATIC_DIR) app.use(express.static(process.env.STATIC_DIR));
+  if (process.env.STATIC_DIR) {
+    const staticDir = path.resolve(process.env.STATIC_DIR);
+    app.use(express.static(staticDir));
+    // History-API fallback: non-API, extension-less GETs belong to the SPA,
+    // so deep links and refreshes (/characters, /episodes/:id, …) serve
+    // index.html. Real files (hashed assets, /download/*.zip) and any path
+    // with an extension still fall through to the normal 404.
+    app.use((req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return next();
+      if (req.path.startsWith("/api/") || /\.[a-zA-Z0-9]+$/.test(req.path) || !req.accepts("html")) return next();
+      res.sendFile(path.join(staticDir, "index.html"));
+    });
+  }
 
   // ── Errors ──────────────────────────────────────────────────────────
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
