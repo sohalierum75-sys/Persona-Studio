@@ -553,6 +553,9 @@ img.topbar-logo-icon {
   display: flex; flex-direction: column;
   gap: var(--sp-4);
 }
+/* Long unbroken tokens (URLs, hashes) must wrap — the narrow side panel
+   cannot afford horizontal overflow. */
+.sidepanel-root .prompt-preview { overflow-wrap: anywhere; }
 .sidepanel-footer {
   padding: var(--sp-4);
   border-top: 1px solid var(--border);
@@ -840,6 +843,10 @@ img.topbar-logo-icon {
   border-radius: var(--radius-md);
   background: var(--bg-card);
   overflow: hidden;
+  /* Cards live in a fixed-height scrollable flex column — without this the
+     overflow:hidden min-size rule lets flex-shrink squash every row into a
+     thin bar once the list outgrows the container. */
+  flex-shrink: 0;
 }
 .prompt-row-header {
   display: flex; align-items: center; gap: 8px;
@@ -855,7 +862,7 @@ img.topbar-logo-icon {
   max-height: 78px; overflow: hidden;
   cursor: pointer;
 }
-.prompt-row-text.expanded { max-height: none; overflow-y: auto; }
+.prompt-row-text.expanded { max-height: 320px; overflow-y: auto; }
 
 /* ---- Scene reference image strip (Scene Details tab) ---- */
 .scene-ref-drop { border-radius: var(--radius-md); }

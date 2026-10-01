@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Copy, Check, Star, Trash2, RefreshCw, Edit3, Plus,
   ChevronDown, ChevronUp, Columns2, X, Zap, Settings2,
@@ -50,6 +50,40 @@ function timeAgo(iso: string) {
   if (diff < 3_600_000) return Math.floor(diff/60_000) + "m ago";
   if (diff < 86_400_000) return Math.floor(diff/3_600_000) + "h ago";
   return Math.floor(diff/86_400_000) + "d ago";
+}
+
+// ── Clamped prompt body with an overflow-aware Expand/Collapse toggle ────────
+// The full text always stays in the record; only the preview is clamped.
+function SavedPromptText({ text, expanded, onToggle }: {
+  text: string; expanded: boolean; onToggle: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    setOverflows(!!el && el.scrollHeight > el.clientHeight + 1);
+  }, [text, expanded]);
+
+  return (
+    <>
+      <div ref={ref} className={`prompt-row-text${expanded ? " expanded" : ""}`}
+        onClick={onToggle}
+        title={expanded ? "Click to collapse" : "Click to expand"}>
+        {text.trim()
+          ? text
+          : <span style={{ fontStyle: "italic", color: "var(--text-muted)" }}>(empty prompt — use Edit to add text)</span>}
+      </div>
+      {(overflows || expanded) && (
+        <div style={{ display: "flex", justifyContent: "center", padding: "0 12px 8px" }}>
+          <button className="btn btn-ghost btn-xs" style={{ fontSize: 10, gap: 3 }} onClick={onToggle}>
+            {expanded ? <ChevronUp size={11}/> : <ChevronDown size={11}/>}
+            {expanded ? "Collapse" : "Expand"}
+          </button>
+        </div>
+      )}
+    </>
+  );
 }
 
 // Build N structural variations of a prompt by reordering / rephrasing sections
@@ -127,6 +161,14 @@ export default function PromptPreviewPanel({
   function saveEdit(id: string) {
     onUpdatePrompt(id, { text: editText, label: editLabel });
     setEditingId(null);
+  }
+
+  function cancelEdit(id: string) {
+    setEditingId(null);
+    // "Add manual" creates the row empty so the editor opens inline; if the
+    // user backs out without typing anything, don't leave an empty row behind.
+    const p = prompts.find((x) => x.id === id);
+    if (p && !p.text.trim()) onDeletePrompt(id);
   }
 
   function duplicatePrompt(p: Prompt) {
@@ -323,8 +365,10 @@ export default function PromptPreviewPanel({
       </div>
 
       {/* ── Saved prompts list ─────────────────────────────────────────── */}
-      <div style={{ flex:1, overflowY:"auto", padding:"12px 16px", display:"flex", flexDirection:"column", gap:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+      {/* Capped height: the rows scroll inside the section, so many prompts
+          can never stretch the panel/page. Heading stays pinned. */}
+      <div style={{ flex:1, minHeight:0, maxHeight:480, display:"flex", flexDirection:"column" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 16px 2px", flexShrink:0 }}>
           <span style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", letterSpacing:"0.06em", textTransform:"uppercase", flex:1 }}>
             Saved prompts {prompts.length > 0 && `(${prompts.length})`}
           </span>
@@ -332,6 +376,8 @@ export default function PromptPreviewPanel({
             <Edit3 size={12}/> Add manual
           </button>
         </div>
+
+        <div style={{ flex:1, minHeight:0, overflowY:"auto", padding:"10px 16px 12px", display:"flex", flexDirection:"column", gap:10 }}>
 
         {prompts.length === 0 && (
           <div style={{ fontSize:12, color:"var(--text-muted)", textAlign:"center", padding:"24px 0", opacity:0.6 }}>
@@ -389,15 +435,13 @@ export default function PromptPreviewPanel({
                   <input className="input" style={{ fontSize:12 }} value={editLabel} onChange={e=>setEditLabel(e.target.value)} placeholder="Label"/>
                   <textarea className="textarea" rows={6} style={{ fontSize:12 }} value={editText} onChange={e=>setEditText(e.target.value)}/>
                   <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>Cancel</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => cancelEdit(p.id)}>Cancel</button>
                     <button className="btn btn-primary btn-sm" onClick={() => saveEdit(p.id)}><Check size={12}/> Save</button>
                   </div>
                 </div>
               ) : (
-                <div className={`prompt-row-text${isExpanded?" expanded":""}`}
-                  onClick={() => setExpandedId(isExpanded ? null : p.id)}>
-                  {p.text}
-                </div>
+                <SavedPromptText text={p.text} expanded={isExpanded}
+                  onToggle={() => setExpandedId(isExpanded ? null : p.id)} />
               )}
 
               {/* Actions */}
@@ -440,6 +484,7 @@ export default function PromptPreviewPanel({
           <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:6 }}>Creates {variCount} structurally varied prompts from the current scene.</div>
         </div>
 
+        </div>
       </div>
     </div>
   );
