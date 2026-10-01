@@ -110,6 +110,14 @@ fi
 # ── Deploy ───────────────────────────────────────────────────────────────────
 COMPOSE="docker compose --project-directory $DEPLOY_DIR --env-file $ENV_FILE -f $DEPLOY_DIR/deploy/compose.production.yaml"
 
+# Caddyfile must already exist as a regular file; otherwise Docker would
+# create a directory at the bind-mount source and caddy would fail to start.
+CADDYFILE="$DEPLOY_DIR/deploy/Caddyfile"
+if [ ! -f "$CADDYFILE" ]; then
+  echo "✗ $CADDYFILE is missing or not a regular file — re-run the workflow to sync deploy/" >&2
+  exit 1
+fi
+
 $COMPOSE pull api
 $COMPOSE up -d --remove-orphans
 

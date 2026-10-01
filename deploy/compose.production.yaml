@@ -39,7 +39,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Absolute path: the compose project directory is /opt/persona-studio,
+      # so a relative ./Caddyfile would miss deploy/ and Docker would create
+      # a directory at the source, failing with a mount type mismatch.
+      - /opt/persona-studio/deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
