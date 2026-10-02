@@ -91,7 +91,33 @@ export const config = {
 
   /** Days to keep soft-deleted tombstones before hard purge */
   tombstoneDays: parseInt(optional("TOMBSTONE_DAYS", "30"), 10),
+
+  /**
+   * Lemon Squeezy billing. Billing is enabled only when ALL of api key,
+   * webhook secret and both variant ids are set; otherwise the pricing
+   * endpoints degrade gracefully (config → configured:false, checkout → 503).
+   * Secrets never leave the server: the client only receives checkout URLs.
+   */
+  lemonsqueezy: {
+    apiKey: process.env.LEMONSQUEEZY_API_KEY ?? "",
+    webhookSecret: process.env.LEMONSQUEEZY_WEBHOOK_SECRET ?? "",
+    lifetimeVariantId: process.env.LEMONSQUEEZY_LIFETIME_VARIANT_ID ?? "",
+    monthlyVariantId: process.env.LEMONSQUEEZY_MONTHLY_VARIANT_ID ?? "",
+    /** Max lifetime deals that can ever be granted (server-enforced) */
+    lifetimeDealLimit: parseInt(optional("LIFETIME_DEAL_LIMIT", "50"), 10),
+    /** Where Lemon Squeezy sends the buyer after payment (defaults to PUBLIC_BASE_URL) */
+    redirectUrl: optional("LEMONSQUEEZY_REDIRECT_URL", ""),
+    apiBaseUrl: "https://api.lemonsqueezy.com/v1",
+  },
 };
+
+export const billingConfigured = (): boolean =>
+  Boolean(
+    config.lemonsqueezy.apiKey &&
+    config.lemonsqueezy.webhookSecret &&
+    config.lemonsqueezy.lifetimeVariantId &&
+    config.lemonsqueezy.monthlyVariantId,
+  );
 
 export function validateConfig(): string[] {
   const problems: string[] = [];
@@ -107,6 +133,25 @@ export function validateConfig(): string[] {
   }
   if (config.google.clientId && config.allowedOrigins.length === 0 && config.extensionRedirectPrefixes.length === 0) {
     problems.push("Set ALLOWED_ORIGINS and/or EXTENSION_REDIRECT_PREFIXES so OAuth callbacks can be validated");
+  }
+  // Lemon Squeezy billing: either fully configured or fully disabled — a
+  // partial setup would take money without being able to grant access.
+  const ls = config.lemonsqueezy;
+  const lsSet = [ls.apiKey, ls.webhookSecret, ls.lifetimeVariantId, ls.monthlyVariantId].filter(Boolean).length;
+  if (lsSet > 0 && lsSet < 4) {
+    problems.push("Lemon Squeezy billing is partially configured — set ALL of LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_WEBHOOK_SECRET, LEMONSQUEEZY_LIFETIME_VARIANT_ID, LEMONSQUEEZY_MONTHLY_VARIANT_ID (or none to disable billing)");
+  }
+  if (!Number.isFinite(ls.lifetimeDealLimit) || ls.lifetimeDealLimit < 1) {
+    problems.push("LIFETIME_DEAL_LIMIT must be a positive integer");
+  }
+  if (ls.webhookSecret && ls.webhookSecret.length < 16) {
+    problems.push("LEMONSQUEEZY_WEBHOOK_SECRET should be a long random string (16+ characters)");
+  }
+  if (ls.lifetimeVariantId && !/^\d+$/.test(ls.lifetimeVariantId)) {
+    problems.push("LEMONSQUEEZY_LIFETIME_VARIANT_ID must be the numeric Lemon Squeezy variant id");
+  }
+  if (ls.monthlyVariantId && !/^\d+$/.test(ls.monthlyVariantId)) {
+    problems.push("LEMONSQUEEZY_MONTHLY_VARIANT_ID must be the numeric Lemon Squeezy variant id");
   }
   return problems;
 }

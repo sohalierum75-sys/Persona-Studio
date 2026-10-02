@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useSearchParams } from "react-router-dom";
 import { useStudio } from "./store";
 import { useAuth, initAuth, signInWithGoogle } from "./lib/auth";
 import { API_CONFIGURED, IS_EXTENSION } from "./lib/config";
@@ -58,6 +58,10 @@ function StudioRoot() {
 
 function RootRoute() {
   const auth = useAuth();
+  // ?checkout=… keeps a signed-in user on the homepage: it is set when a
+  // pricing checkout starts and by Lemon Squeezy's post-payment redirect.
+  const [params] = useSearchParams();
+  const inCheckout = params.has("checkout");
 
   // Extension context never needs the marketing homepage
   if (IS_EXTENSION) return <Navigate to="/characters" replace />;
@@ -65,8 +69,11 @@ function RootRoute() {
   // Local-only mode (no API configured) — skip homepage
   if (!API_CONFIGURED) return <Navigate to="/characters" replace />;
 
-  // Confirmed signed-in → go to Studio
-  if (auth.status === "signed-in") return <Navigate to="/characters" replace />;
+  // Confirmed signed-in → go to Studio (unless a checkout brought them here)
+  if (auth.status === "signed-in") {
+    if (inCheckout) return <HomePage />;
+    return <Navigate to="/characters" replace />;
+  }
 
   // Finish callback exchange/session restoration before choosing a public route.
   if (auth.status === "initialising" || auth.status === "signing-in") {

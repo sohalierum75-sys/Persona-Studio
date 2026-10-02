@@ -5,6 +5,7 @@ import {
   Menu, Monitor, Puzzle, RefreshCw, Shirt, Smartphone, UserRound, X,
 } from "lucide-react";
 import Brand from "../components/ui/Brand";
+import PricingSection from "../components/home/PricingSection";
 import { CharacterPortrait, OutfitGlyph, SceneVignette, type VignetteId } from "../components/home/graphics";
 import { ENGINES, formatEnginePrompt, type EngineId } from "../utils/promptFormatter";
 import type { Location, Outfit, Scene } from "../types";
@@ -58,6 +59,7 @@ const EXTENSION_FALLBACK_URL = "/download/persona-studio-extension-v1.1.0.zip";
 const NAV_LINKS = [
   { label: "How it works", target: "workflow" },
   { label: "Features", target: "features" },
+  { label: "Pricing", target: "pricing" },
   { label: "Extension", target: "extension" },
 ];
 const FAQ = [
@@ -375,6 +377,9 @@ export default function HomePage() {
         <span className="sr-only" role="status">{copied}</span>
       </section>
 
+      {/* ── Pricing ──────────────────────────────────────────────────── */}
+      <PricingSection />
+
       {/* ── Final call to action ─────────────────────────────────────── */}
       <section className="hp-cta" aria-label="Get started">
         <div className="hp-cta-card">
@@ -397,6 +402,7 @@ export default function HomePage() {
     <footer className="hp-footer">
       <span>© {new Date().getFullYear()} Persona Studio</span>
       <button className="hp-text-button" onClick={() => setShowFaq(!showFaq)} aria-expanded={showFaq}>Questions &amp; answers</button>
+      <button className="hp-text-button" onClick={() => scrollTo("pricing")}>Pricing</button>
       <button className="hp-text-button" onClick={() => scrollTo("extension")}>Chrome extension</button>
       <Link to="/characters">Open Studio <ArrowRight size={13} /></Link>
     </footer>

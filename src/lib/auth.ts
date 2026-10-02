@@ -147,7 +147,7 @@ export async function initAuth(): Promise<AuthState> {
 
 // ─── Sign in ──────────────────────────────────────────────────────────────────
 
-export async function signInWithGoogle(): Promise<void> {
+export async function signInWithGoogle(opts?: { returnUrl?: string }): Promise<void> {
   if (!API_CONFIGURED) {
     setState({ status: "error", error: "Sync server is not configured. See .env.local." });
     return;
@@ -159,7 +159,7 @@ export async function signInWithGoogle(): Promise<void> {
     if (IS_EXTENSION) {
       await signInExtension();
     } else {
-      await signInWeb();
+      await signInWeb(opts?.returnUrl);
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Sign-in failed";
@@ -168,11 +168,11 @@ export async function signInWithGoogle(): Promise<void> {
 }
 
 /** Web: top-level redirect through the API. The API redirects back with a code. */
-async function signInWeb(): Promise<void> {
+async function signInWeb(returnUrl?: string): Promise<void> {
   const challenge = await makeChallenge();
-  const returnUrl = window.location.origin + window.location.pathname;
+  const target = returnUrl ?? window.location.origin + window.location.pathname;
   window.location.href =
-    `${API_URL}/api/auth/google/start?client=web&challenge=${challenge}&redirect=${encodeURIComponent(returnUrl)}`;
+    `${API_URL}/api/auth/google/start?client=web&challenge=${challenge}&redirect=${encodeURIComponent(target)}`;
   // Navigation takes over from here
 }
 

@@ -29,6 +29,17 @@ model User {
   refreshTokens RefreshToken[]
   authCodes     AuthCode[]
   entities      Entity[]
+
+  // ── Billing (granted only by verified Lemon Squeezy webhooks) ──
+  /// Set when a verified webhook grants the one-time (lifetime) purchase
+  lifetimeAt          DateTime?
+  /// Latest Lemon Squeezy subscription state: active | on_trial | cancelled | expired | past_due | paused
+  subscriptionStatus  String?
+  /// End of the current paid period — access continues until this date after cancel
+  subscriptionEndsAt  DateTime?
+  /// Lemon Squeezy subscription id (unique per user)
+  subscriptionId      String?   @unique
+  purchases           Purchase[]
 }
 
 /// Long-lived session token (stored hashed; rotated on every refresh)
@@ -104,4 +115,36 @@ model EntityVersion {
 
   @@unique([userId, entityId, version])
   @@index([userId, entityId])
+}
+
+/// One row per paid Lemon Squeezy order or subscription. Written only by
+/// verified webhooks; doubles as the ledger the lifetime-deal limit counts.
+model Purchase {
+  id               String   @id @default(uuid())
+  provider         String   @default("lemonsqueezy")
+  /// lifetime | monthly
+  kind             String
+  /// granted | limit_reached | refunded
+  status           String
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email            String
+  lsOrderId        String?  @unique
+  lsSubscriptionId String?  @unique
+  lsVariantId      String
+  amountCents      Int
+  currency         String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([kind, status])
+  @@index([userId])
+}
+
+/// Every verified webhook event, keyed for idempotency (retries are ignored).
+model BillingEvent {
+  id        String   @id
+  eventName String
+  payload   Json
+  createdAt DateTime @default(now())
 }

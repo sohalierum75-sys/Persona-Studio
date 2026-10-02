@@ -11,6 +11,7 @@ import { assetsRouter } from "./routes/assets.js";
 import { eventsRouter } from "./routes/events.js";
 import { requireAuth } from "./lib/sessions.js";
 import { authRateLimit } from "./lib/rate-limit.js";
+import { billingRouter, billingWebhookRouter } from "./routes/billing.js";
 
 export function createApp(): express.Express {
   const app = express();
@@ -35,6 +36,12 @@ export function createApp(): express.Express {
   }));
 
   app.use((_req, res, next) => { res.setHeader("Cache-Control", "no-store"); res.setHeader("X-Content-Type-Options", "nosniff"); res.setHeader("Referrer-Policy", "no-referrer"); next(); });
+
+  // Lemon Squeezy webhook — mounted BEFORE the JSON parser: signature
+  // verification needs the raw request bytes, and this router terminates
+  // the request so the global parser never touches it.
+  app.use("/api/billing/webhook", express.raw({ type: "*/*", limit: "256kb" }), billingWebhookRouter);
+
   app.use(express.json({ limit: config.bodyLimit }));
 
   // ── Health ──────────────────────────────────────────────────────────
@@ -47,6 +54,7 @@ export function createApp(): express.Express {
   app.use("/api/events", eventsRouter);
   app.use("/api/assets", requireAuth, assetsRouter);
   app.use("/api/sync", requireAuth, syncRouter);
+  app.use("/api/billing", billingRouter);
   if (process.env.STATIC_DIR) {
     const staticDir = path.resolve(process.env.STATIC_DIR);
     app.use(express.static(staticDir));
