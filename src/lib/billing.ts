@@ -3,11 +3,14 @@
  *
  * The server owns everything sensitive: the client only ever receives
  * a hosted Lemon Squeezy checkout URL from an authenticated call, and
- * access is granted server-side after webhook verification.
+ * paid access is granted server-side after webhook verification.
  */
 
-import { API_URL } from "./config";
+import { API_URL, IS_EXTENSION } from "./config";
 import { apiFetch } from "./api";
+import { getAuthState } from "./auth";
+
+export const UPGRADE_URL = `${IS_EXTENSION ? API_URL : ""}/?pricing=1#pricing`;
 
 export type BillingPlan = "lifetime" | "monthly";
 
@@ -21,6 +24,9 @@ export interface BillingPlansInfo {
 }
 
 export interface Entitlements {
+  plan: "free" | "monthly" | "lifetime";
+  limits: { characters: number | null; episodes: number | null; prompts: number | null; bulkScenes: number | null };
+  usage: { characters: number; episodes: number; prompts: number };
   lifetime: { active: boolean; since: string | null };
   subscription: { active: boolean; status: string; renewsAt: string | null } | null;
 }
@@ -43,4 +49,12 @@ export function startCheckout(plan: BillingPlan): Promise<{ url: string }> {
 
 export function fetchEntitlements(): Promise<Entitlements> {
   return apiFetch<Entitlements>("/api/billing/entitlements");
+}
+
+export async function checkBulkImport(count: number): Promise<void> {
+  if (getAuthState().status !== "signed-in") return;
+  const ent = await fetchEntitlements();
+  if (ent.limits.bulkScenes !== null && count > ent.limits.bulkScenes) {
+    throw new Error(`Free plan allows ${ent.limits.bulkScenes} scenes per bulk import. Select fewer scenes or upgrade from the account menu.`);
+  }
 }

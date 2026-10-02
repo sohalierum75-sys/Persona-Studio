@@ -20,7 +20,7 @@ export default function SyncStatus() {
       case "syncing":        return "Saving…";
       case "synced":         return "Synced";
       case "offline":        return pendingCount > 0 ? `Offline — ${pendingCount} pending` : "Offline";
-      case "error":          return "Sync failed";
+      case "error":          return error?.startsWith("Free plan") ? "Free limit reached — open account menu" : "Sync failed";
       case "conflict":       return "Conflict — review needed";
       case "session-expired": return "Sign in again";
       default:               return "";

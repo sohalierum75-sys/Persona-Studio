@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { useStudio } from "../../store";
+import { checkBulkImport } from "../../lib/billing";
 import type { Scene, Character, Outfit, Location, FieldConfig, CameraAngle, Prompt } from "../../types";
 import { buildPrompt } from "../../utils/continuity";
 import { parseSceneText, EXAMPLE_PASTE } from "../../utils/parseSceneText";
@@ -387,11 +388,13 @@ export default function BulkSceneBuilder({
     setCreating(true);
     const selected = rows.filter(r => r.selected);
     try {
+      await checkBulkImport(selected.length);
+      const bulkImportId = uuid();
       const created: Scene[] = [];
       let prevRow: DraftRow | undefined;
       for (let i = 0; i < selected.length; i++) {
         const row = selected[i];
-        const sc  = await addScene(resolveRow(row, i, prevRow));
+        const sc  = await addScene({ ...resolveRow(row, i, prevRow), bulkImportId });
         created.push(sc);
         prevRow = row;
       }
@@ -420,7 +423,8 @@ export default function BulkSceneBuilder({
         (batch.generatePrompts ? `, ${promptCount} prompt${promptCount!==1?"s":""} built` : "")
       );
       onCreated(created[0]?.id ?? "");
-    } finally { setCreating(false); }
+    } catch (error) { window.alert(error instanceof Error ? error.message : "Import failed"); }
+    finally { setCreating(false); }
   }
 
   // ── Counts ───────────────────────────────────────────────────────────────

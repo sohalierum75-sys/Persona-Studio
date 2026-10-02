@@ -37,6 +37,8 @@ before(async()=>{
   base=`http://127.0.0.1:${server.address().port}`;
   a=(await request("/api/auth/test-login",undefined,{email:"a@example.test"})).json;
   b=(await request("/api/auth/test-login",undefined,{email:"b@example.test"})).json;
+  // Existing sync stress tests exercise the unlimited tier.
+  await prisma.user.update({where:{id:a.user.id},data:{lifetimeAt:new Date()}});
 }, {timeout:60000});
 after(async()=>{
   globalThis.fetch=nativeFetch;
@@ -129,6 +131,48 @@ test("refresh rotation is atomic and logout revokes refresh",async()=>{
   assert.equal((await request("/api/auth/refresh",undefined,{refreshToken:fresh.refreshToken})).status,401);
 });
 
+test("Free quotas, retries, concurrent saves, bulk imports and paid upgrades",async()=>{
+  const session=(await request("/api/auth/test-login",undefined,{email:"free@example.test"})).json;
+  const token=session.accessToken;
+  const ent=async()=>(await request("/api/billing/entitlements",token)).json;
+  assert.equal((await ent()).plan,"free");
+  assert.deepEqual((await ent()).usage,{characters:0,episodes:0,prompts:0});
+  const c=character(), create=op("character",c);
+  const first=(await apply([create],token))[0];
+  assert.equal(first.status,"applied");
+  assert.deepEqual((await apply([create],token))[0],first);
+  assert.equal((await apply([op("character",character())],token))[0].status,"limit_reached");
+  const ep={id:randomUUID(),characterId:c.id};
+  assert.equal((await apply([op("episode",ep)],token))[0].status,"applied");
+  assert.equal((await apply([op("episode",{...ep,id:randomUUID()})],token))[0].status,"limit_reached");
+  const scenes=Array.from({length:4},(_,order)=>({id:randomUUID(),episodeId:ep.id,order,bulkImportId:"first-import",prompts:[]}));
+  assert.deepEqual((await apply(scenes.map(s=>op("scene",s)),token)).map((r:any)=>r.status),["applied","applied","applied","limit_reached"]);
+  assert.equal((await apply([op("scene",scenes[3])],token))[0].status,"limit_reached");
+  const prompts=Array.from({length:10},()=>({id:randomUUID(),text:"Saved",source:"manual"}));
+  assert.equal((await apply([op("scene",{...scenes[0],prompts},1)],token))[0].status,"applied");
+  assert.equal((await ent()).usage.prompts,10);
+  assert.equal((await apply([op("scene",{...scenes[1],prompts:[prompts[0]]},1)],token))[0].status,"limit_reached");
+  // Editing and reducing saved prompts remain available at the cap.
+  assert.equal((await apply([op("scene",{...scenes[0],prompts:prompts.slice(0,9)},2)],token))[0].status,"applied");
+  const concurrent=await Promise.all([1,2].map(i=>apply([op("scene",{...scenes[i],prompts:[prompts[0]]},1)],token)));
+  assert.deepEqual(concurrent.map(r=>r[0].status).sort(),["applied","limit_reached"]);
+  // Active monthly and lifetime buyers can exceed every Free quota.
+  for(const plan of ["monthly","lifetime"]){
+    await prisma.user.update({where:{id:session.user.id},data:plan==="monthly"?{subscriptionStatus:"active"}:{subscriptionStatus:"expired",lifetimeAt:new Date()}});
+    assert.equal((await ent()).plan,plan);
+    assert.equal((await ent()).limits.prompts,null);
+    const paidChar=character(),paidEp={id:randomUUID(),characterId:paidChar.id};
+    const paidScenes=Array.from({length:4},(_,order)=>({id:randomUUID(),episodeId:paidEp.id,order,prompts,bulkImportId:plan}));
+    assert.ok((await apply([op("character",paidChar),op("episode",paidEp),...paidScenes.map(s=>op("scene",s))],token)).every((r:any)=>r.status==="applied"));
+  }
+  await prisma.user.update({where:{id:session.user.id},data:{lifetimeAt:null,subscriptionStatus:"expired"}});
+  assert.equal((await ent()).plan,"free");
+  assert.ok((await ent()).usage.prompts>10);
+  assert.equal((await apply([op("character",{...c,name:"Still editable"},1)],token))[0].status,"applied");
+  assert.equal((await apply([{opId:randomUUID(),kind:"character",id:c.id,type:"delete",baseVersion:2}],token))[0].status,"applied");
+  assert.ok((await request("/api/sync",token)).json.records.some((r:any)=>r.id===c.id && r.deleted));
+});
+
 test("browser Studio and real extension sync, offline restart, conflict and migration",{timeout:180000},async()=>{
   const {chromium}=await import("playwright");
   const {config}=await import("../src/config.js");
@@ -148,7 +192,7 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     const session=(await request("/api/auth/test-login",undefined,{email:"browser@example.test"})).json;
     studio=await chromium.launchPersistentContext(studioProfile,{headless:true,executablePath});
     let page=await studio.newPage();
-    await page.goto("http://127.0.0.1:5178");
+    await page.goto("http://127.0.0.1:5178/characters");
     await page.getByRole("button",{name:"Continue with Google"}).waitFor();
     await page.evaluate((s:any)=>localStorage.setItem("ps_auth_tokens",JSON.stringify(s)),session);
     await page.reload();
@@ -163,6 +207,15 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     let saved=false;
     for(let n=0;n<40;n++){saved=(await request("/api/sync",session.accessToken)).json.records.some((r:any)=>r.id===c.id);if(saved)break;await new Promise(r=>setTimeout(r,250));}
     assert.ok(saved,"Studio save must be confirmed on the server");
+    assert.equal((await request("/api/billing/entitlements",session.accessToken)).json.plan,"free");
+    await page.locator(".account-avatar-btn").click();
+    await page.getByText("Free plan",{exact:true}).waitFor();
+    await page.getByText("1 / 1 characters",{exact:true}).waitFor();
+    assert.match(await page.getByRole("link",{name:"Upgrade for unlimited access"}).getAttribute("href"),/pricing=1/);
+    await page.locator(".account-avatar-btn").click();
+    // The new account used Studio without a purchase; continue the multi-record
+    // extension/migration regression on the paid tier.
+    await prisma.user.update({where:{id:session.user.id},data:{subscriptionStatus:"active"}});
     extension=await chromium.launchPersistentContext(extensionProfile,{headless:true,executablePath,args:[`--disable-extensions-except=${path.join(root,"dist")}`,`--load-extension=${path.join(root,"dist")}`]});
     const worker=extension.serviceWorkers()[0] ?? await extension.waitForEvent("serviceworker");
     const extensionId=new URL(worker.url()).host;

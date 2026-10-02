@@ -2,7 +2,7 @@
 // Lemon Squeezy billing — webhook signature verification,
 // checkout creation and entitlement grants.
 //
-// Access is granted ONLY here, from webhooks whose HMAC-SHA256
+// Paid access is granted ONLY here, from webhooks whose HMAC-SHA256
 // signature (X-Signature over the raw body) verifies against
 // LEMONSQUEEZY_WEBHOOK_SECRET. Client-visible data never
 // includes prices, variant ids or secrets — the client gets a
@@ -11,6 +11,7 @@
 import crypto from "node:crypto";
 import { prisma } from "./prisma.js";
 import { config } from "../config.js";
+import { freeLimits, getUsage } from "./plans.js";
 
 // ─── Webhook payload types (only the fields we consume) ──────────────────────
 
@@ -327,7 +328,11 @@ export async function getEntitlements(userId: string) {
     select: { lifetimeAt: true, subscriptionStatus: true, subscriptionEndsAt: true },
   });
   if (!user) return null;
+  const plan = user.lifetimeAt ? "lifetime" : hasActiveSubscription(user) ? "monthly" : "free";
   return {
+    plan,
+    limits: plan === "free" ? freeLimits : { characters: null, episodes: null, prompts: null, bulkScenes: null },
+    usage: await getUsage(prisma, userId),
     lifetime: { active: user.lifetimeAt != null, since: user.lifetimeAt?.toISOString() ?? null },
     subscription: user.subscriptionStatus
       ? {

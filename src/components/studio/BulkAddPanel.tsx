@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { useStudio } from "../../store";
+import { checkBulkImport } from "../../lib/billing";
 import type { Scene, Character, Outfit, Location, FieldConfig, CameraAngle } from "../../types";
 import { buildPrompt } from "../../utils/continuity";
 
@@ -234,9 +235,11 @@ export default function BulkAddPanel({
     if (!validate()) return;
     setCreating(true);
     try {
+      await checkBulkImport(rows.length);
+      const bulkImportId = uuid();
       const created: Scene[] = [];
       for (let i = 0; i < rows.length; i++) {
-        const sc = await addScene(resolveRow(rows[i], i));
+        const sc = await addScene({ ...resolveRow(rows[i], i), bulkImportId });
         created.push(sc);
       }
       await updateEpisode(episode.id, { sceneIds: created.map((s) => s.id) });
@@ -261,7 +264,8 @@ export default function BulkAddPanel({
         (generatePrompts ? ", " + promptCount + " prompt" + (promptCount !== 1 ? "s" : "") + " generated" : "")
       );
       onCreated(created[0]?.id ?? "");
-    } finally { setCreating(false); }
+    } catch (error) { window.alert(error instanceof Error ? error.message : "Import failed"); }
+    finally { setCreating(false); }
   }
 
   if (summary) {

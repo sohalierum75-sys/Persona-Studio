@@ -27,6 +27,9 @@ async function pageFor(t, tokenStatus = 200) {
   await page.route('**/api/**', async route => {
     const request = route.request();
     const pathname = new URL(request.url()).pathname;
+    if (pathname === '/api/billing/config') {
+      return route.fulfill({ json: { configured: false, lifetime: { limit: 50, claimed: null, remaining: null } } });
+    }
     if (pathname === '/api/auth/token') {
       calls.exchange++;
       const verifier = request.postDataJSON().verifier;
@@ -46,6 +49,9 @@ async function pageFor(t, tokenStatus = 200) {
     }
     assert.ok(request.headers().authorization === 'Bearer test-access', 'authenticated request must send saved access token');
     calls.authenticated++;
+    if (pathname === '/api/billing/entitlements') {
+      return route.fulfill({ json: { plan: 'free', lifetime: { active: false, since: null }, subscription: null, limits: { characters: 1, episodes: 1, prompts: 10, bulkScenes: 3 }, usage: { characters: 0, episodes: 0, prompts: 0 } } });
+    }
     return route.fulfill({ json: pathname === '/api/auth/me' ? { user } : { records: [] } });
   });
   return { page, calls };
@@ -92,6 +98,9 @@ test('Google callback saves tokens, enters existing Studio and survives refresh'
   await page.reload();
   await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
   assert.equal(calls.refresh, 1);
+  await page.goto(origin + '/?pricing=1#pricing');
+  await page.getByRole('button', { name: 'Use Free plan — no purchase required' }).click();
+  await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
 });
 
 test('callback failure is visible instead of silently returning to marketing', async t => {

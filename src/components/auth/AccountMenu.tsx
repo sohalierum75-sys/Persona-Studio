@@ -7,12 +7,22 @@ import { LogOut, User } from "lucide-react";
 import { useAuth, signOut } from "../../lib/auth";
 import { useSyncState } from "../../lib/sync";
 import { API_CONFIGURED } from "../../lib/config";
+import { fetchEntitlements, UPGRADE_URL, type Entitlements } from "../../lib/billing";
 
 export default function AccountMenu() {
   const auth = useAuth();
   const sync = useSyncState();
   const [open, setOpen] = useState(false);
   const ref  = useRef<HTMLDivElement>(null);
+  const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setEntitlements(null);
+    if (open && auth.status === "signed-in") {
+      void fetchEntitlements().then(value => { if (!cancelled) setEntitlements(value); }).catch(() => {});
+    }
+    return () => { cancelled = true; };
+  }, [open, auth.user?.id, auth.status, sync.lastSynced, sync.pendingCount]);
 
   // Close on outside click
   useEffect(() => {
@@ -58,6 +68,17 @@ export default function AccountMenu() {
           </div>
 
           {/* Sync status row */}
+          <div style={{ padding:14, fontSize:12 }}>
+            {entitlements ? <>
+              <strong>{entitlements.plan === "free" ? "Free plan" : `${entitlements.plan === "lifetime" ? "Lifetime" : "Monthly"} plan — unlimited`}</strong>
+              {(["characters", "episodes", "prompts"] as const).map(key => (
+                <div key={key}>{entitlements.usage[key]} / {entitlements.limits[key] ?? "Unlimited"} {key}</div>
+              ))}
+              <div>{entitlements.limits.bulkScenes ?? "Unlimited"} scenes per bulk import</div>
+              {entitlements.plan === "free" && <a href={UPGRADE_URL} target="_blank" rel="noreferrer">Upgrade for unlimited access</a>}
+            </> : <span>Plan usage unavailable. <a href={UPGRADE_URL} target="_blank" rel="noreferrer">View plans</a></span>}
+          </div>
+          {sync.error && <div role="alert" style={{ padding:14, fontSize:12 }}>{sync.error} Your pending changes remain on this device. <a href={UPGRADE_URL} target="_blank" rel="noreferrer">View plans</a></div>}
           <div className="account-menu-divider"/>
           <div className="account-menu-row" style={{ fontSize:11, color:"var(--text-muted)" }}>
             <span>Sync status:</span>

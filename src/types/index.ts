@@ -207,6 +207,7 @@ export interface Scene {
   customFieldValues?: Record<string, string>;
 
   prompts?: Prompt[];
+  bulkImportId?: string;
 
   /** @deprecated Pre-multi-prompt field — migrated to `prompts` on load. */
   importedPrompts?: ImportedPrompt[];

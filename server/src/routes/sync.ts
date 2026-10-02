@@ -7,6 +7,8 @@ import { type AuthedRequest } from "../lib/sessions.js";
 import { broadcastChange } from "../lib/events.js";
 import { sha256 } from "../lib/tokens.js";
 import { operationSchema, recordKinds, validateImage } from "../lib/images.js";
+import { hasActiveSubscription } from "../lib/lemonsqueezy.js";
+import { freeLimits, getUsage, promptCount } from "../lib/plans.js";
 
 export const syncRouter = Router();
 type Op = z.infer<typeof operationSchema>;
@@ -48,6 +50,9 @@ async function validate(op: Op, tx: Tx, userId: string): Promise<string | null> 
   if (op.kind === "usageRecord") refs.push(["scene", d.sceneId, true]);
   if (["scene", "usageRecord"].includes(op.kind)) refs.push(["outfit", d.outfitId], ["location", d.locationId]);
   if (op.kind === "scene") {
+    for (const key of ["prompts", "importedPrompts"]) {
+      if (d[key] !== undefined && !Array.isArray(d[key])) return `Invalid ${key}`;
+    }
     refs.push(["continuityGroup", d.continuityGroupId]);
     if (d.referenceImages !== undefined && !Array.isArray(d.referenceImages)) return "Invalid referenceImages";
     for (const img of (d.referenceImages ?? []) as any[]) refs.push(["asset", img?.assetId, true]);
@@ -78,6 +83,9 @@ export async function applyOperations(userId: string, raw: unknown) {
   // receipt insertion and version history against concurrent API instances.
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+    const user = await tx.user.findUniqueOrThrow({ where: { id: userId } });
+    const unlimited = !!user.lifetimeAt || hasActiveSubscription(user);
+    let newScenes = 0;
     const results: any[] = [];
     for (const input of ops) {
       const op = structuredClone(input);
@@ -99,6 +107,27 @@ export async function applyOperations(userId: string, raw: unknown) {
       if (!existing && op.baseVersion !== 0) { results.push({opId:op.opId,status:"invalid",error:"Record does not exist at this version"}); continue; }
       const error = await validate(op, tx, userId);
       if (error) { results.push({opId:op.opId,status:"invalid",error}); continue; }
+      if (!unlimited && op.type === "put") {
+        const usage = await getUsage(tx, userId);
+        const adding = !existing || !!existing.deletedAt;
+        let limitError: string | null = null;
+        if (adding && op.kind === "character" && usage.characters >= freeLimits.characters) limitError = "1 saved character";
+        if (adding && op.kind === "episode" && usage.episodes >= freeLimits.episodes) limitError = "1 saved episode";
+        if (op.kind === "scene") {
+          const increase = promptCount(op.data) - (adding ? 0 : promptCount(existing?.data));
+          if (increase > 0 && usage.prompts + increase > freeLimits.prompts) limitError = "10 saved prompts";
+          const batchId = op.data?.bulkImportId;
+          if (batchId !== undefined && (typeof batchId !== "string" || !batchId || batchId.length > 120)) limitError = "a valid bulk import identifier";
+          if (adding) {
+            const batchCount = typeof batchId === "string" ? await tx.entity.count({where:{userId,kind:"scene",data:{path:["bulkImportId"],equals:batchId}}}) : 0;
+            if (newScenes >= freeLimits.bulkScenes || batchCount >= freeLimits.bulkScenes) limitError = "3 scenes per bulk import";
+          } else if ((existing?.data as any)?.bulkImportId !== batchId) {
+            limitError = "an unchanged bulk import identifier";
+          }
+        }
+        if (limitError) { results.push({opId:op.opId,status:"limit_reached",error:`Free plan allows ${limitError}. Upgrade for unlimited access.`,upgradeUrl:"/?pricing=1#pricing"}); continue; }
+      }
+      if (op.kind === "scene" && op.type === "put" && (!existing || existing.deletedAt)) newScenes++;
       const version = (existing?.version ?? 0) + 1;
       const data = (op.data ?? existing?.data ?? {id:op.id}) as Prisma.InputJsonValue;
       await tx.entity.upsert({where:{userId_id:{userId,id:op.id}},create:{userId,id:op.id,kind:op.kind,data,version,deletedAt:op.type === "delete" ? new Date() : null},update:{data,version,deletedAt:op.type === "delete" ? new Date() : null,updatedAt:new Date()}});

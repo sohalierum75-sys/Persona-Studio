@@ -130,8 +130,9 @@ export default function PricingSection() {
   return <section className="hp-section" id="pricing" aria-label="Pricing">
     <div className="hp-section-head">
       <span className="hp-eyebrow">Pricing</span>
-      <h2>One studio. Two ways to pay.</h2>
-      <p>Both plans include everything — there are no feature tiers. Take the lifetime deal while it lasts, or pay as you go.</p>
+      <h2>Start free. Upgrade when you need more.</h2>
+      <p>Free includes 1 character, 1 episode, 10 saved prompts, and up to 3 scenes per bulk import. Monthly and lifetime plans include unlimited access to existing features.</p>
+      <button className="btn btn-secondary" onClick={() => signedIn ? navigate("/characters") : void signInWithGoogle()}>Use Free plan — no purchase required</button>
     </div>
 
     {confirmation && <div className={`hp-checkout-note ${confirmation === "active" ? "is-active" : confirmation === "pending" ? "is-pending" : "is-warn"}`} role="status">
