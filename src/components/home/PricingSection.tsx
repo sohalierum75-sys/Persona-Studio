@@ -67,10 +67,14 @@ export default function PricingSection() {
 
   async function buy(plan: BillingPlan) {
     setNotice("");
+    if (plans?.missingVariables?.length) {
+      setNotice(`Checkout setup incomplete. Set these server environment variables: ${plans.missingVariables.join(", ")}.`);
+      return;
+    }
     if (!signedIn) {
       // Checkout must know who is buying — sign in first, then resume.
       try { sessionStorage.setItem(INTENT_KEY, plan); } catch { /* storage unavailable */ }
-      void signInWithGoogle();
+      void signInWithGoogle({ returnUrl: `${window.location.origin}/?checkout=${plan}` });
       return;
     }
     setBusy(plan);
@@ -136,10 +140,10 @@ export default function PricingSection() {
     </div>
 
     {confirmation && <div className={`hp-checkout-note ${confirmation === "active" ? "is-active" : confirmation === "pending" ? "is-pending" : "is-warn"}`} role="status">
-      {confirmation === "pending" && "Payment received — activating your access. This usually takes a few seconds."}
+      {confirmation === "pending" && "Checking your access. Payment confirmation may take a few seconds."}
       {confirmation === "active" && "You're all set — your access is active. Open the Studio to keep going."}
-      {confirmation === "delayed" && "Payment received. Activation is taking longer than usual — refresh this page in a minute."}
-      {confirmation === "signed-out" && "Payment received. Sign in with the same Google account to finish activating your access."}
+      {confirmation === "delayed" && "Paid access has not been confirmed yet. If you completed payment, refresh this page in a minute."}
+      {confirmation === "signed-out" && "Sign in with the same Google account to check your purchase and access."}
     </div>}
 
     <div className="hp-pricing">

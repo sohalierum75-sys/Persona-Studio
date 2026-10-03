@@ -4,7 +4,7 @@
 // webhook (mounted with a raw-body parser for HMAC verification).
 // ============================================================
 import { Router, Request, Response } from "express";
-import { config, billingConfigured } from "../config.js";
+import { config, billingConfigured, billingMissingVariables } from "../config.js";
 import { requireAuth, type AuthedRequest } from "../lib/sessions.js";
 import { prisma } from "../lib/prisma.js";
 import {
@@ -23,6 +23,7 @@ billingRouter.get("/config", async (_req, res) => {
   const claimed = configured ? await lifetimeClaims() : null;
   res.json({
     configured,
+    missingVariables: billingMissingVariables(),
     lifetime: {
       limit: config.lemonsqueezy.lifetimeDealLimit,
       claimed,
@@ -51,7 +52,11 @@ billingRouter.post("/checkout", requireAuth, async (req, res) => {
     return;
   }
   if (!billingConfigured()) {
-    res.status(503).json({ error: "Checkout is not connected yet. It will be available here soon." });
+    const missingVariables = billingMissingVariables();
+    res.status(503).json({
+      error: `Checkout setup incomplete. Set these server environment variables: ${missingVariables.join(", ")}.`,
+      missingVariables,
+    });
     return;
   }
 
@@ -61,11 +66,11 @@ billingRouter.post("/checkout", requireAuth, async (req, res) => {
     return;
   }
 
+  if (user.lifetimeAt) {
+    res.status(409).json({ error: "You already have lifetime access." });
+    return;
+  }
   if (plan === "lifetime") {
-    if (user.lifetimeAt) {
-      res.status(409).json({ error: "You already have lifetime access." });
-      return;
-    }
     if ((await lifetimeRemaining()) <= 0) {
       res.status(409).json({ error: "The first-50 lifetime deal is sold out — the monthly plan is still available." });
       return;

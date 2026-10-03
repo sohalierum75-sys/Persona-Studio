@@ -1381,3 +1381,35 @@ img.topbar-logo-icon {
 .account-menu-item:hover { background: var(--bg-elevated); }
 .account-menu-item--danger { color: var(--error); }
 .account-menu-item--danger:hover { background: rgba(255,107,107,0.08); }
+
+/* Compact account details share the site's theme tokens. */
+.account-menu { position: relative; }
+.account-avatar-btn img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.account-menu-dropdown { width: min(288px, calc(100vw - 24px)); max-height: calc(100dvh - 72px); overflow-y: auto; padding: 6px; }
+.account-menu-profile { gap: 10px; padding: 10px 8px 14px; }
+.account-menu-avatar, .account-menu-avatar-placeholder { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.account-menu-identity { min-width: 0; }
+.account-menu-name, .account-menu-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-menu-name { font-size: 13px; font-weight: 650; color: var(--text-primary); line-height: 1.5; }
+.account-menu-email { font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+.account-menu-plan { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated); }
+.account-menu-plan-heading, .account-menu-usage > div, .account-menu-sync-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.account-menu-plan-heading { font-size: 12px; color: var(--text-primary); margin-bottom: 10px; }
+.account-menu-badge { padding: 2px 7px; border-radius: 20px; color: var(--accent-text); background: var(--accent-dim); font-size: 10px; font-weight: 600; }
+.account-menu-usage { display: grid; gap: 7px; margin: 0 0 9px; font-size: 12px; }
+.account-menu-usage dt { text-transform: capitalize; color: var(--text-secondary); }
+.account-menu-usage dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text-primary); }
+.account-menu-usage dd span { color: var(--text-muted); font-weight: 400; }
+.account-menu-caption { margin: 4px 0 0; color: var(--text-muted); font-size: 11px; line-height: 1.5; }
+.account-menu-upgrade { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 8px 10px; border: 1px solid var(--border-accent); border-radius: var(--radius-sm); background: var(--accent-dim); color: var(--accent-text); font-size: 12px; font-weight: 600; text-decoration: none; }
+.account-menu-upgrade:hover { border-color: var(--accent); }
+.account-menu-sync { padding: 13px 8px 10px; }
+.account-menu-sync-heading { font-size: 11px; color: var(--text-secondary); }
+.account-menu-sync-heading > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+.account-menu-sync-status { color: var(--text-muted); }
+.account-menu-sync-status.is-synced { color: var(--success); }
+.account-menu-sync-status.is-error, .account-menu-sync-status.is-conflict, .account-menu-sync-status.is-session-expired, .account-menu-pending { color: var(--warning); }
+.account-menu-pending, .account-menu-error { margin: 6px 0 0; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.account-menu-error { color: var(--warning); }
+.account-menu-item { border-radius: var(--radius-sm); padding: 9px 8px; font-size: 12px; }
+.account-menu a:focus-visible, .account-menu button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

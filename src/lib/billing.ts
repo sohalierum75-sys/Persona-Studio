@@ -16,6 +16,7 @@ export type BillingPlan = "lifetime" | "monthly";
 
 export interface BillingPlansInfo {
   configured: boolean;
+  missingVariables?: string[];
   lifetime: {
     limit: number;
     claimed: number | null;

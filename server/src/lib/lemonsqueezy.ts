@@ -288,14 +288,14 @@ export async function createCheckout(params: {
     method: "POST",
     headers: {
       Authorization: `Bearer ${ls.apiKey}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
+      Accept: "application/vnd.api+json",
+      "Content-Type": "application/vnd.api+json",
     },
     body: JSON.stringify({
       data: {
         type: "checkouts",
         attributes: {
-          product_options: { redirect_url: `${base}/?checkout=success` },
+          product_options: { redirect_url: `${base.replace(/\/$/, "")}/?checkout=success`, enabled_variants: [Number(variantId)] },
           checkout_data: {
             email: params.user.email,
             name: params.user.name,
@@ -304,7 +304,8 @@ export async function createCheckout(params: {
           preview: false,
         },
         relationships: {
-          checkout_object: { data: { type: "variants", id: variantId } },
+          store: { data: { type: "stores", id: ls.storeId } },
+          variant: { data: { type: "variants", id: variantId } },
         },
       },
     }),

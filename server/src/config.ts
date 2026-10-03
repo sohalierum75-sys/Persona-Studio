@@ -93,12 +93,13 @@ export const config = {
   tombstoneDays: parseInt(optional("TOMBSTONE_DAYS", "30"), 10),
 
   /**
-   * Lemon Squeezy billing. Billing is enabled only when ALL of api key,
+   * Lemon Squeezy billing. Billing is enabled only when ALL of api key, store id,
    * webhook secret and both variant ids are set; otherwise the pricing
    * endpoints degrade gracefully (config → configured:false, checkout → 503).
    * Secrets never leave the server: the client only receives checkout URLs.
    */
   lemonsqueezy: {
+    storeId: process.env.LEMONSQUEEZY_STORE_ID ?? "",
     apiKey: process.env.LEMONSQUEEZY_API_KEY ?? "",
     webhookSecret: process.env.LEMONSQUEEZY_WEBHOOK_SECRET ?? "",
     lifetimeVariantId: process.env.LEMONSQUEEZY_LIFETIME_VARIANT_ID ?? "",
@@ -111,13 +112,20 @@ export const config = {
   },
 };
 
-export const billingConfigured = (): boolean =>
-  Boolean(
-    config.lemonsqueezy.apiKey &&
-    config.lemonsqueezy.webhookSecret &&
-    config.lemonsqueezy.lifetimeVariantId &&
-    config.lemonsqueezy.monthlyVariantId,
-  );
+/** Only environment variable names are safe to return to the browser. */
+export function billingMissingVariables(): string[] {
+  const ls = config.lemonsqueezy;
+  return Object.entries({
+    LEMONSQUEEZY_API_KEY: ls.apiKey,
+    LEMONSQUEEZY_STORE_ID: ls.storeId,
+    LEMONSQUEEZY_WEBHOOK_SECRET: ls.webhookSecret,
+    LEMONSQUEEZY_LIFETIME_VARIANT_ID: ls.lifetimeVariantId,
+    LEMONSQUEEZY_MONTHLY_VARIANT_ID: ls.monthlyVariantId,
+  }).filter(([, value]) => !value.trim() || /YOUR_|CHANGE_ME|REPLACE_WITH/.test(value))
+    .map(([name]) => name);
+}
+
+export const billingConfigured = (): boolean => billingMissingVariables().length === 0;
 
 export function validateConfig(): string[] {
   const problems: string[] = [];
@@ -134,23 +142,23 @@ export function validateConfig(): string[] {
   if (config.google.clientId && config.allowedOrigins.length === 0 && config.extensionRedirectPrefixes.length === 0) {
     problems.push("Set ALLOWED_ORIGINS and/or EXTENSION_REDIRECT_PREFIXES so OAuth callbacks can be validated");
   }
-  // Lemon Squeezy billing: either fully configured or fully disabled — a
-  // partial setup would take money without being able to grant access.
+  // Checkout stays disabled until billing setup is complete.
   const ls = config.lemonsqueezy;
-  const lsSet = [ls.apiKey, ls.webhookSecret, ls.lifetimeVariantId, ls.monthlyVariantId].filter(Boolean).length;
-  if (lsSet > 0 && lsSet < 4) {
-    problems.push("Lemon Squeezy billing is partially configured — set ALL of LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_WEBHOOK_SECRET, LEMONSQUEEZY_LIFETIME_VARIANT_ID, LEMONSQUEEZY_MONTHLY_VARIANT_ID (or none to disable billing)");
+  const missing = billingMissingVariables();
+  // Missing billing setup is reported by the billing endpoints; keep the free app available.
+  if (!missing.includes("LEMONSQUEEZY_STORE_ID") && !/^\d+$/.test(ls.storeId)) {
+    problems.push("LEMONSQUEEZY_STORE_ID must be the numeric Lemon Squeezy store id");
   }
   if (!Number.isFinite(ls.lifetimeDealLimit) || ls.lifetimeDealLimit < 1) {
     problems.push("LIFETIME_DEAL_LIMIT must be a positive integer");
   }
-  if (ls.webhookSecret && ls.webhookSecret.length < 16) {
+  if (!missing.includes("LEMONSQUEEZY_WEBHOOK_SECRET") && ls.webhookSecret.length < 16) {
     problems.push("LEMONSQUEEZY_WEBHOOK_SECRET should be a long random string (16+ characters)");
   }
-  if (ls.lifetimeVariantId && !/^\d+$/.test(ls.lifetimeVariantId)) {
+  if (!missing.includes("LEMONSQUEEZY_LIFETIME_VARIANT_ID") && !/^\d+$/.test(ls.lifetimeVariantId)) {
     problems.push("LEMONSQUEEZY_LIFETIME_VARIANT_ID must be the numeric Lemon Squeezy variant id");
   }
-  if (ls.monthlyVariantId && !/^\d+$/.test(ls.monthlyVariantId)) {
+  if (!missing.includes("LEMONSQUEEZY_MONTHLY_VARIANT_ID") && !/^\d+$/.test(ls.monthlyVariantId)) {
     problems.push("LEMONSQUEEZY_MONTHLY_VARIANT_ID must be the numeric Lemon Squeezy variant id");
   }
   return problems;

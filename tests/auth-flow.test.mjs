@@ -130,3 +130,73 @@ test('a cancelled callback is not hidden by a previously saved account', async t
   assert.match(await page.getByRole('alert').innerText(), /Sign-in was cancelled/);
   assert.equal(calls.authenticated, 0);
 });
+
+for (const plan of ['lifetime', 'monthly']) {
+  test(`${plan} purchase uses authenticated checkout and follows its hosted URL`, async t => {
+    const { page } = await pageFor(t);
+    await page.goto(origin);
+    await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
+    await page.route('**/api/billing/checkout', route => {
+      assert.equal(route.request().headers().authorization, 'Bearer test-access');
+      assert.deepEqual(route.request().postDataJSON(), { plan });
+      return route.fulfill({ json: { url: `https://checkout.lemonsqueezy.com/buy/${plan}` } });
+    });
+    await page.route('https://checkout.lemonsqueezy.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
+    await page.goto(origin + '/?pricing=1');
+    await page.locator(`#pricing-${plan}-cta`).click();
+    await page.waitForURL(`https://checkout.lemonsqueezy.com/buy/${plan}`);
+  });
+}
+
+test('checkout setup error is visible without claiming payment', async t => {
+  const { page } = await pageFor(t);
+  await page.goto(origin);
+  await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
+  await page.route('**/api/billing/checkout', route => route.fulfill({ status: 503, json: { error: 'Checkout setup incomplete. Set these server environment variables: LEMONSQUEEZY_STORE_ID.' } }));
+  await page.goto(origin + '/?pricing=1');
+  await page.locator('#pricing-lifetime-cta').click();
+  await page.getByRole('alert').filter({ hasText: 'LEMONSQUEEZY_STORE_ID' }).waitFor();
+  assert.equal(new URL(page.url()).origin, origin);
+  await page.goto(origin + '/?checkout=success');
+  await page.getByText('Checking your access. Payment confirmation may take a few seconds.').waitFor();
+  assert.doesNotMatch(await page.locator('body').innerText(), /Payment received|your access is active/);
+});
+
+test('purchase survives Google sign-in and resumes selected plan', async t => {
+  const { page, calls } = await pageFor(t);
+  await page.goto(origin);
+  await page.route('**/api/auth/google/start?**', route => {
+    const url = new URL(route.request().url());
+    assert.equal(url.searchParams.get('redirect'), origin + '/?checkout=lifetime');
+    calls.challenge = url.searchParams.get('challenge');
+    return route.fulfill({ contentType: 'text/html', body: 'Provider redirect' });
+  });
+  await page.locator('#pricing-lifetime-cta').click();
+  await page.waitForURL('**/api/auth/google/start?**');
+  await page.route('**/api/billing/checkout', route => {
+    assert.deepEqual(route.request().postDataJSON(), { plan: 'lifetime' });
+    return route.fulfill({ json: { url: 'https://checkout.lemonsqueezy.com/buy/resumed' } });
+  });
+  await page.route('https://checkout.lemonsqueezy.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
+  await page.goto(origin + '/?checkout=lifetime&code=test-code');
+  await page.waitForURL('https://checkout.lemonsqueezy.com/buy/resumed');
+});
+
+test('account shows identity, usage, sync and actions; Escape restores focus', async t => {
+  const { page } = await pageFor(t);
+  await page.goto(origin);
+  await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
+  await page.goto(origin + '/characters');
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+  const panel = page.getByRole('region', { name: 'Your account' });
+  await panel.getByText('Free plan', { exact: true }).waitFor();
+  assert.match(await panel.innerText(), /Auth Test[\s\S]*auth@example.test/);
+  assert.equal(await panel.locator('dl > div').count(), 3);
+  await panel.getByText('Cloud sync', { exact: true }).waitFor();
+  await panel.getByRole('link', { name: 'Upgrade to unlimited' }).waitFor();
+  await panel.getByRole('button', { name: 'Sign out' }).waitFor();
+  if (process.env.ACCOUNT_MENU_SCREENSHOT) await page.screenshot({ path: process.env.ACCOUNT_MENU_SCREENSHOT });
+  await page.keyboard.press('Escape');
+  assert.equal(await panel.count(), 0);
+  assert.equal(await page.getByRole('button', { name: 'Account', exact: true }).evaluate(el => el === document.activeElement), true);
+});

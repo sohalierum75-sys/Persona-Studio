@@ -21,6 +21,7 @@ process.env.ALLOW_TEST_LOGIN = "true";
 process.env.NODE_ENV = "test";
 process.env.ALLOWED_ORIGINS = "http://localhost:5173";
 process.env.LEMONSQUEEZY_API_KEY = "test-api-key";
+process.env.LEMONSQUEEZY_STORE_ID = "333";
 process.env.LEMONSQUEEZY_WEBHOOK_SECRET = "test-webhook-signing-secret";
 process.env.LEMONSQUEEZY_LIFETIME_VARIANT_ID = "111";
 process.env.LEMONSQUEEZY_MONTHLY_VARIANT_ID = "222";
@@ -186,9 +187,12 @@ test("checkout creates a Lemon Squeezy checkout with the buyer bound in custom d
   });
   assert.equal(res.status, 200);
   assert.equal((await res.json()).url, "https://checkout.lemonsqueezy.com/buy/test");
-  assert.equal(captured.body.data.relationships.checkout_object.data.id, "222");
+  assert.equal(captured.body.data.relationships.variant.data.id, "222");
   assert.equal(captured.body.data.attributes.checkout_data.custom.user_id, s.user.id);
   assert.equal(captured.headers.Authorization, "Bearer test-api-key");
+  assert.deepEqual(captured.body.data.relationships.store.data, { type: "stores", id: "333" });
+  assert.deepEqual(captured.body.data.attributes.product_options.enabled_variants, [222]);
+  assert.equal(captured.headers["Content-Type"], "application/vnd.api+json");
   assert.ok(captured.body.data.attributes.product_options.redirect_url.includes("/?checkout=success"));
   globalThis.fetch = nativeFetch;
 });
@@ -214,6 +218,10 @@ test("checkout endpoint degrades honestly when billing is unconfigured", async (
       body: JSON.stringify({ plan: "monthly" }),
     });
     assert.equal(res.status, 503);
+    const body = await res.json();
+    assert.deepEqual(body.missingVariables, ["LEMONSQUEEZY_API_KEY"]);
+    assert.match(body.error, /Checkout setup incomplete.*LEMONSQUEEZY_API_KEY/);
+    assert.ok(!JSON.stringify(body).includes("test-webhook-signing-secret"));
   } finally {
     config.lemonsqueezy.apiKey = realKey;
   }
