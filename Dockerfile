@@ -5,7 +5,7 @@ COPY package*.json ./
 RUN npm ci
 COPY src ./src
 COPY public ./public
-COPY index.html sidepanel.html tsconfig*.json vite.config.ts ./
+COPY index.html floating-panel.html tsconfig*.json vite.config.ts ./
 COPY scripts ./scripts
 ARG VITE_API_URL=http://localhost:3210
 ENV VITE_API_URL=$VITE_API_URL

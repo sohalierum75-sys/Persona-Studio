@@ -24,6 +24,16 @@ backend environment backup. Preserve it and include its database in your backups
 
 For a containerized local app and database, configure both environment files, then run `docker compose up --build -d`; Studio is served at `http://localhost:3210`. Include that origin in `ALLOWED_ORIGINS`.
 
+## Floating Chrome panel
+
+After loading or reloading `dist/` in Chrome 116+, pin Persona Studio and click its toolbar icon on an HTTP or HTTPS webpage. The existing workspace opens over the page. Drag its top bar to move it, drag the bottom-right handle to resize it, or focus either control and use arrow keys (Shift moves faster). Minimize keeps selections and work loaded; clicking the extension again restores the same panel. Close removes the overlay. Size and position are remembered and kept inside the viewport. Full navigations require clicking the icon again; same-page navigation keeps the panel open.
+
+The overlay uses Shadow DOM and an extension-origin frame, keeping styles, account storage, sign-in, sync, prompt copying, and the full Studio separate from the host website. Injection uses `activeTab` and `scripting`; there is no `sidePanel` or `tabs` permission. `clipboardWrite` keeps prompt copying available in the embedded UI. Chrome's own pages, the Chrome Web Store, and restricted viewers cannot host injected extensions; a toolbar badge and tooltip explain when a page blocks injection.
+
+Run `npm run package:extension` to produce `dist/download/persona-studio-extension-v1.2.0.zip`. Unzip it and load the extracted directory, or load `dist/` directly. The configured API URL and pinned extension identity are preserved by the build.
+
+`npm run test:extension` builds the extension and runs background and browser checks on plain, hostile-CSS, and restrictive-CSP/permissions-policy webpages, including dragging, resizing, keyboard controls, page scrolling, SPA replacement, small screens, prompt copying, and full Studio access. Browser fixtures use test-only host grants and a mocked account API; the production manifest uses the toolbar's temporary grant. Set `TEST_PUBLIC_PAGES=1` to additionally check Example Domain, Wikipedia, and Chrome's extension documentation. Screenshots are saved under `test-results/overlay-*/`. Install full Chromium with `npx playwright install chromium` if needed.
+
 ## Google OAuth
 
 Create a Google OAuth client of type **Web application**. Both clients use this one server-side client. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` only in `server/.env`.

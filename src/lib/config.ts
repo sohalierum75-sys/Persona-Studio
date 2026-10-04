@@ -15,5 +15,5 @@ export const API_URL = (() => {
  */
 export const API_CONFIGURED = API_URL.length > 0;
 
-/** Detect extension context (side panel / service worker) */
+/** Detect extension context (floating panel / service worker) */
 export const IS_EXTENSION = typeof chrome !== "undefined" && !!chrome?.runtime?.id;

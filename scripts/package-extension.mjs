@@ -30,7 +30,7 @@ if (!fs.existsSync(manifestPath)) {
   process.exit(1);
 }
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-const requiredFiles = ["background.js", "sidepanel.html", "index.html"];
+const requiredFiles = ["background.js", "overlay.js", "floating-panel.html", "index.html"];
 for (const f of requiredFiles) {
   if (!fs.existsSync(path.join(distDir, f))) {
     console.error(`✗ dist/${f} missing — build output incomplete. Re-run \`npm run build\`.`);

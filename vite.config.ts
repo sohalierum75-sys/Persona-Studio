@@ -6,6 +6,13 @@ import fs from "node:fs";
 export default defineConfig(({mode}) => ({
   plugins: [react(), {
     name: "persona-extension-manifest",
+    generateBundle(_options, bundle) {
+      const overlay = bundle["overlay.js"];
+      if (overlay?.type === "chunk") {
+        if (overlay.imports.length) throw new Error("Overlay injection must be a self-contained classic script");
+        overlay.code = `(() => {\n${overlay.code}\n})();`;
+      }
+    },
     writeBundle(options) {
       const env = loadEnv(mode, process.cwd(), "VITE_");
       const api = process.env.VITE_API_URL ?? env.VITE_API_URL ?? "http://localhost:3210";
@@ -18,12 +25,13 @@ export default defineConfig(({mode}) => ({
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, "index.html"),
-        sidepanel: resolve(import.meta.dirname, "sidepanel.html"),
+        panel: resolve(import.meta.dirname, "floating-panel.html"),
+        overlay: resolve(import.meta.dirname, "src/extension/overlay.ts"),
         background: resolve(import.meta.dirname, "src/background.ts"),
       },
       output: {
         entryFileNames: (chunkInfo) => {
-          if (chunkInfo.name === "background") return "background.js";
+          if (["background", "overlay"].includes(chunkInfo.name)) return `${chunkInfo.name}.js`;
           return "assets/[name]-[hash].js";
         },
       },

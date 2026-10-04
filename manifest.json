@@ -1,19 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Persona Studio",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "One character. Every scene. A character workspace for AI-influencer and recurring-character creators.",
   "action": {
-    "default_title": "Open Persona Studio Panel"
-  },
-  "side_panel": {
-    "default_path": "sidepanel.html"
+    "default_title": "Open Persona Studio floating panel"
   },
   "permissions": [
     "storage",
-    "sidePanel",
-    "tabs",
-    "identity"
+    "activeTab",
+    "scripting",
+    "identity",
+    "clipboardWrite"
   ],
   "background": {
     "service_worker": "background.js",
@@ -21,5 +19,17 @@
   },
   "host_permissions": [
     "http://localhost:3210/*"
+  ],
+  "minimum_chrome_version": "116",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "floating-panel.html"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
   ]
 }
