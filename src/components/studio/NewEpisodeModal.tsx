@@ -1,4 +1,5 @@
-﻿import React, { useState } from "react";
+﻿import { PlanLimitError } from "../../lib/plan-guard";
+import React, { useState } from "react";
 import { X } from "lucide-react";
 import { useStudio } from "../../store";
 import { useNavigate } from "react-router-dom";
@@ -15,8 +16,9 @@ export default function NewEpisodeModal({ characterId, onClose }: Props) {
   const epCount = episodes.filter((e) => e.characterId === characterId).length;
 
   async function handleCreate() {
-    if (!title.trim()) return;
+    if (!title.trim() || saving) return;
     setSaving(true);
+    try {
     const ep = await addEpisode({
       characterId,
       title: title.trim(),
@@ -29,6 +31,8 @@ export default function NewEpisodeModal({ characterId, onClose }: Props) {
     setSaving(false);
     onClose();
     navigate(`/episodes/${ep.id}`);
+    } catch (error) { if (!(error instanceof PlanLimitError)) window.alert(error instanceof Error ? error.message : "Save failed"); }
+    finally { setSaving(false); }
   }
 
   return (

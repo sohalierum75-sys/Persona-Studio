@@ -1,3 +1,5 @@
+import { confirmDelete } from "../lib/confirm-delete";
+import { PlanLimitError } from "../lib/plan-guard";
 import React, { useMemo, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -102,7 +104,7 @@ export default function EpisodePage() {
   async function handleDeleteScene(sceneId: string) {
     const sc = episodeScenes.find((s) => s.id === sceneId);
     const n  = sc?.prompts?.length ?? 0;
-    if (!confirm(`Delete "${sc?.title}"?${n > 0 ? ` This will also remove its ${n} saved prompt${n>1?"s":""}.` : ""}`)) return;
+    if (!sc || !await confirmDelete(sc.title, n > 0 ? `This will also remove its ${n} saved prompt${n > 1 ? "s" : ""}.` : undefined)) return;
     await deleteScene(sceneId);
     const remaining = episodeScenes.filter((s) => s.id !== sceneId);
     setActiveSceneId(remaining[0]?.id ?? null);
@@ -130,12 +132,19 @@ export default function EpisodePage() {
         createdAt: new Date().toISOString(),
       };
       await addScenePrompts(activeScene.id, [newPrompt]);
-    } finally { setIsBuilding(false); }
+    } catch (error) { if (!(error instanceof PlanLimitError)) window.alert(error instanceof Error ? error.message : "Save failed"); } finally { setIsBuilding(false); }
   }, [activeScene, livePrompt, addScenePrompts]);
 
   // ── Prompt CRUD ────────────────────────────────────────────────────────────
-  async function handleAddPrompt(p: Prompt) {
-    if (activeScene) await addScenePrompts(activeScene.id, [p]);
+  async function handleAddPrompt(p: Prompt | Prompt[]): Promise<boolean> {
+    if (!activeScene) return false;
+    try {
+      await addScenePrompts(activeScene.id, Array.isArray(p) ? p : [p]);
+      return true;
+    } catch (error) {
+      if (!(error instanceof PlanLimitError)) window.alert(error instanceof Error ? error.message : "Save failed");
+      return false;
+    }
   }
   async function handleUpdatePrompt(promptId: string, changes: Partial<Prompt>) {
     if (!activeScene) return;

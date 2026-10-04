@@ -146,10 +146,21 @@ test("Free quotas, retries, concurrent saves, bulk imports and paid upgrades",as
   assert.equal((await apply([op("episode",ep)],token))[0].status,"applied");
   assert.equal((await apply([op("episode",{...ep,id:randomUUID()})],token))[0].status,"limit_reached");
   const scenes=Array.from({length:4},(_,order)=>({id:randomUUID(),episodeId:ep.id,order,bulkImportId:"first-import",prompts:[]}));
-  assert.deepEqual((await apply(scenes.map(s=>op("scene",s)),token)).map((r:any)=>r.status),["applied","applied","applied","limit_reached"]);
+  assert.deepEqual((await apply(scenes.map(s=>op("scene",s)),token)).map((r:any)=>r.status),["limit_reached","limit_reached","limit_reached","limit_reached"]);
+  assert.equal(await prisma.entity.count({where:{userId:session.user.id,kind:"scene"}}),0,"Rejected import must not save any scenes");
+  assert.ok((await apply(scenes.slice(0,3).map(s=>op("scene",s)),token)).every((r:any)=>r.status === "applied"));
   assert.equal((await apply([op("scene",scenes[3])],token))[0].status,"limit_reached");
   const prompts=Array.from({length:10},()=>({id:randomUUID(),text:"Saved",source:"manual"}));
   assert.equal((await apply([op("scene",{...scenes[0],prompts},1)],token))[0].status,"applied");
+  assert.equal((await ent()).usage.prompts,10);
+  const before = await prisma.entity.count({where:{userId:session.user.id}});
+  const rejectedBatch = await apply([
+    op("scene",{id:randomUUID(),episodeId:ep.id,order:4,bulkImportId:"prompt-overflow",prompts:[]}),
+    op("scene",{id:randomUUID(),episodeId:ep.id,order:5,bulkImportId:"prompt-overflow",prompts:[prompts[0]]}),
+  ],token);
+  assert.ok(rejectedBatch.every((r:any)=>r.status === "limit_reached" && r.resource === "prompts"));
+  assert.match(rejectedBatch[0].error,/10\/10 prompts/);
+  assert.equal(await prisma.entity.count({where:{userId:session.user.id}}),before,"Prompt overflow rolls back every scene in the import");
   assert.equal((await ent()).usage.prompts,10);
   assert.equal((await apply([op("scene",{...scenes[1],prompts:[prompts[0]]},1)],token))[0].status,"limit_reached");
   // Editing and reducing saved prompts remain available at the cap.
@@ -224,7 +235,7 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     const panel=await extension.newPage();
     panel.on("pageerror",(e:any)=>console.log("Panel error:",e.message));
     panel.on("console",(m:any)=>{if(m.type()==="error")console.log("Panel console:",m.text());});
-    await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+    await panel.goto(`chrome-extension://${extensionId}/floating-panel.html`);
     try{await panel.getByText("Browser Mira",{exact:true}).first().waitFor({state:"attached",timeout:10000});}catch(e){console.log("Panel body:",await panel.locator("body").innerText());throw e;}
 
     await panel.getByLabel("Select character").waitFor();

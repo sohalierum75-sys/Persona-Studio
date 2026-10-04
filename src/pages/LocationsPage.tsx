@@ -1,3 +1,4 @@
+import { confirmDelete } from "../lib/confirm-delete";
 ﻿import React, { useState, useRef } from "react";
 import { Plus, MapPin, Trash2, Upload, X } from "lucide-react";
 import { useStudio } from "../store";
@@ -93,8 +94,8 @@ export default function LocationsPage() {
                       {l.setting}
                     </p>
                   )}
-                  <button className="btn btn-danger btn-xs" onClick={() => {
-                    if (confirm("Delete location?")) deleteLocation(l.id);
+                  <button className="btn btn-danger btn-xs" aria-label={`Delete ${l.name}`} onClick={async () => {
+                    if (await confirmDelete(l.name)) deleteLocation(l.id);
                   }}>
                     <Trash2 size={10} />
                   </button>

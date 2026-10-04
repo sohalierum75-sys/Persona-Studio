@@ -1,3 +1,4 @@
+import { confirmDelete } from "../../lib/confirm-delete";
 import React, { useState } from "react";
 import {
   Copy, Check, X, Plus, Sparkles, Pencil, Upload,
@@ -84,6 +85,8 @@ export default function ScenePromptsPanel({
   }
 
   async function removePrompt(promptId: string) {
+    const prompt = prompts.find(p => p.id === promptId);
+    if (!prompt || !await confirmDelete(prompt.label || "Untitled prompt", "The scene will not be deleted.")) return;
     await deleteScenePrompt(scene.id, promptId);
   }
 

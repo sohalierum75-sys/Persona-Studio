@@ -1,4 +1,5 @@
-﻿import React, { useState } from "react";
+﻿import { PlanLimitError } from "../../lib/plan-guard";
+import React, { useState } from "react";
 import { X } from "lucide-react";
 import { useStudio } from "../../store";
 import { useNavigate } from "react-router-dom";
@@ -22,8 +23,9 @@ export default function NewCharacterModal({ onClose }: Props) {
   const [saving, setSaving] = useState(false);
 
   async function handleCreate() {
-    if (!name.trim()) return;
+    if (!name.trim() || saving) return;
     setSaving(true);
+    try {
     const c = await addCharacter({
       name: name.trim(),
       tagline: tagline.trim(),
@@ -33,6 +35,8 @@ export default function NewCharacterModal({ onClose }: Props) {
     setSaving(false);
     onClose();
     navigate(`/characters/${c.id}`);
+    } catch (error) { if (!(error instanceof PlanLimitError)) window.alert(error instanceof Error ? error.message : "Save failed"); }
+    finally { setSaving(false); }
   }
 
   return (

@@ -1,3 +1,4 @@
+import { confirmDelete } from "../../lib/confirm-delete";
 import React, { useRef, useState } from "react";
 import {
   Plus, Trash2, Copy, GripVertical, AlertTriangle,
@@ -5,7 +6,7 @@ import {
 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { useStudio } from "../../store";
-import { checkBulkImport } from "../../lib/billing";
+import { PlanLimitError } from "../../lib/plan-guard";
 import type { Scene, Character, Outfit, Location, FieldConfig, CameraAngle } from "../../types";
 import { buildPrompt } from "../../utils/continuity";
 
@@ -81,7 +82,7 @@ let _dragRowSrc: number | null = null;
 export default function BulkAddPanel({
   episode, character, charOutfits, locations, fieldConfigs, existingSceneCount, onCreated,
 }: Props) {
-  const { addScene, updateEpisode, addScenePrompts } = useStudio();
+  const { addScenes } = useStudio();
 
   const [shared, setShared] = useState<SharedValues>(DEFAULT_SHARED);
   const [sharing, setSharing] = useState<Record<string, SharingMode>>({
@@ -125,7 +126,9 @@ export default function BulkAddPanel({
     });
   }
 
-  function deleteRow(id: string) {
+  async function deleteRow(id: string) {
+    const row = rows.find(r => r.id === id);
+    if (!row || !await confirmDelete(row.title || "Untitled scene row")) return;
     setRows((rs) => rs.filter((r) => r.id !== id));
   }
 
@@ -232,17 +235,15 @@ export default function BulkAddPanel({
   }
 
   async function handleCreate() {
-    if (!validate()) return;
+    if (creating || !validate()) return;
     setCreating(true);
     try {
-      await checkBulkImport(rows.length);
       const bulkImportId = uuid();
       const created: Scene[] = [];
       for (let i = 0; i < rows.length; i++) {
-        const sc = await addScene({ ...resolveRow(rows[i], i), bulkImportId });
+        const sc: Scene = { ...resolveRow(rows[i], i), bulkImportId, id:uuid(), createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() };
         created.push(sc);
       }
-      await updateEpisode(episode.id, { sceneIds: created.map((s) => s.id) });
       let promptCount = 0;
       if (generatePrompts) {
         for (const sc of created) {
@@ -250,21 +251,22 @@ export default function BulkAddPanel({
           const location = locations.find((l)  => l.id === sc.locationId);
           const text = buildPrompt(sc, character, outfit, location, fieldConfigs).trim();
           if (text) {
-            await addScenePrompts(sc.id, [{
+            (sc.prompts ??= []).push({
               id: uuid(), text,
               label: "Bulk \u2013 " + sc.title,
               source: "imported" as const, createdAt: new Date().toISOString(),
-            }]);
+            });
             promptCount++;
           }
         }
       }
+      await addScenes(created);
       setSummary(
         created.length + " scene" + (created.length !== 1 ? "s" : "") + " created" +
         (generatePrompts ? ", " + promptCount + " prompt" + (promptCount !== 1 ? "s" : "") + " generated" : "")
       );
       onCreated(created[0]?.id ?? "");
-    } catch (error) { window.alert(error instanceof Error ? error.message : "Import failed"); }
+    } catch (error) { if (!(error instanceof PlanLimitError)) window.alert(error instanceof Error ? error.message : "Import failed"); }
     finally { setCreating(false); }
   }
 

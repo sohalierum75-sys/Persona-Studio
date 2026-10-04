@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+﻿import { PlanLimitError } from "../../lib/plan-guard";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Upload, AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import type { Scene, Prompt } from "../../types";
@@ -35,9 +36,11 @@ export default function ImportPromptsModal({ scenes, defaultSceneId, onImport, o
     const toAdd: Prompt[] = parseResult.prompts.map((p) => ({
       id: uuid(), text: p.text, label: p.label, source: "imported", createdAt: now,
     }));
-    await onImport(sceneId, toAdd);
-    setDone(toAdd.length);
-    setImporting(false);
+    try {
+      await onImport(sceneId, toAdd);
+      setDone(toAdd.length);
+    } catch (error) { if (!(error instanceof PlanLimitError)) window.alert(error instanceof Error ? error.message : "Import failed"); }
+    finally { setImporting(false); }
   }
 
   useEffect(() => {

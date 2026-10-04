@@ -53,21 +53,47 @@ let onLocalMutation: (() => void) | null = null;
 export function setMutationListener(cb: (() => void) | null) { onLocalMutation = cb; }
 // Queue and optimistic cache commit in ONE IndexedDB transaction. A browser
 // crash can never leave a saved edit without its corresponding pending op.
+export interface Mutation { store: StoreName; type: "put" | "delete"; value: any }
+type MutationGuard = (userId: string, mutations: Mutation[], ops: any[]) => Promise<{acknowledged: any[]} | void>;
+let mutationGuard: MutationGuard | null = null;
+export function setMutationGuard(guard: MutationGuard) { mutationGuard = guard; }
 export async function localMutation(store: StoreName, type: "put" | "delete", value: any): Promise<void> {
+  return localMutations([{store,type,value}]);
+}
+export async function localMutations(mutations: Mutation[]): Promise<void> {
   const userId = activeAccount;
-  const db = await getDBForAccount(userId);
-  const id = type === "put" ? value.id : value;
-  const tx = (db as any).transaction([store,"ops","meta"], "readwrite");
-  if (type === "put") await tx.objectStore(store).put(value); else await tx.objectStore(store).delete(id);
-  const kind = storeKinds[store];
-  if (userId && kind) {
-    const key = `${userId}:${kind}:${id}`;
-    const old = await tx.objectStore("ops").get(key);
-    const version = await tx.objectStore("meta").get(`ver:${userId}:${kind}:${id}`);
-    await tx.objectStore("ops").put({key,userId,kind,id,type,data:type === "put" ? value : undefined,revision:crypto.randomUUID(),baseVersion:old?.baseVersion ?? version?.value ?? 0,createdAt:old?.createdAt ?? new Date().toISOString(),attempts:0,lastAttempt:null,error:null});
-  }
-  await tx.done;
-  onLocalMutation?.();
+  const commit = async () => {
+    const db: any = await getDBForAccount(userId);
+    const ops = [];
+    for (const {store,type,value} of mutations) {
+      const id = type === "put" ? value.id : value;
+      const kind = storeKinds[store];
+      if (userId && kind) {
+        const key = `${userId}:${kind}:${id}`;
+        const old = await db.get("ops",key);
+        const version = await db.get("meta",`ver:${userId}:${kind}:${id}`);
+        ops.push({key,userId,kind,id,type,data:type === "put" ? value : undefined,revision:crypto.randomUUID(),baseVersion:old?.baseVersion ?? version?.value ?? 0,createdAt:old?.createdAt ?? new Date().toISOString(),attempts:0,lastAttempt:null,error:null});
+      }
+    }
+    const accepted = userId && mutationGuard ? await mutationGuard(userId,mutations,ops) : undefined;
+    if (activeAccount !== userId) throw new Error("Account changed. Please try again.");
+    const tx = db.transaction([...new Set(mutations.map(m => m.store)),"ops","meta"],"readwrite");
+    for (const {store,type,value} of mutations) {
+      if (type === "put") await tx.objectStore(store).put(value);
+      else await tx.objectStore(store).delete(value);
+    }
+    if (accepted) {
+      for (const op of accepted.acknowledged) {
+        const pending = await tx.objectStore("ops").get(op.key);
+        if (pending?.revision === op.revision || ops.some(candidate => candidate.key === op.key)) await tx.objectStore("ops").delete(op.key);
+        await tx.objectStore("meta").put({key:`ver:${userId}:${op.kind}:${op.id}`,value:op.version});
+      }
+    } else for (const op of ops) await tx.objectStore("ops").put(op);
+    await tx.done;
+    onLocalMutation?.();
+  };
+  if (userId && mutationGuard) await navigator.locks.request(`ps-sync:${userId}`,commit);
+  else await commit();
 }
 
 // ---- Sync metadata helpers ----

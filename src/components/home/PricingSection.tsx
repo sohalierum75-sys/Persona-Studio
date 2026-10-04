@@ -22,7 +22,7 @@ const LIFETIME_FEATURES = [
   "Full Studio workspace — characters, wardrobe, locations, episodes",
   "Bulk scene builder and continuity checks",
   "Prompt formatting for Midjourney, Stable Diffusion, and Flux",
-  "Chrome side panel with click-to-copy prompts",
+  "Chrome floating panel with click-to-copy prompts",
   "Google account sync between Studio and extension",
 ];
 const MONTHLY_FEATURES = [

@@ -2,7 +2,7 @@
 import { Moon, Sun, Archive, Download, Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import JSZip from "jszip";
 import { useStudio } from "../store";
-import { dbGetAll, localMutation, DB_STORES, type StoreName } from "../db";
+import { dbGetAll, localMutations, type Mutation, DB_STORES, type StoreName } from "../db";
 import type { AppSettings, ContinuitySettings } from "../types";
 
 export default function SettingsPage() {
@@ -239,12 +239,14 @@ function BackupRestoreCard() {
       const total = Object.values(imported).reduce((n,rows) => n + (rows?.length ?? 0), 0);
       const manifest = {exportedAt};
       if (!confirm(`Restore ${total} records from ${exportedAt}? This replaces this workspace and syncs the changes to the signed-in account.`)) {setBusy(null);return;}
+      const mutations: Mutation[] = [];
       for (const store of DB_STORES) {
         const rows = imported[store] ?? [];
         const ids = new Set(rows.map(row => row.id));
-        for (const row of await dbGetAll<{id:string}>(store)) if (!ids.has(row.id)) await localMutation(store,"delete",row.id);
-        for (const row of rows) await localMutation(store,"put",row);
+        for (const row of await dbGetAll<{id:string}>(store)) if (!ids.has(row.id)) mutations.push({store,type:"delete",value:row.id});
+        for (const row of rows) mutations.push({store,type:"put",value:row});
       }
+      await localMutations(mutations);
       await loadAll();
       setStatus({ ok: true, msg: `Restored backup from ${manifest.exportedAt ?? "unknown date"} — ${total} records.` });
     } catch (err) {

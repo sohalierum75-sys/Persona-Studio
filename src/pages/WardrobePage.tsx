@@ -1,3 +1,4 @@
+import { confirmDelete } from "../lib/confirm-delete";
 ﻿import React, { useState, useRef } from "react";
 import { Plus, Shirt, Upload, Trash2, Tag } from "lucide-react";
 import { useStudio } from "../store";
@@ -122,8 +123,8 @@ export default function WardrobePage() {
                     </p>
                   )}
                   <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-                    <button className="btn btn-danger btn-xs" onClick={() => {
-                      if (confirm("Delete this outfit?")) deleteOutfit(o.id);
+                    <button className="btn btn-danger btn-xs" aria-label={`Delete ${o.name}`} onClick={async () => {
+                      if (await confirmDelete(o.name)) deleteOutfit(o.id);
                     }}>
                       <Trash2 size={10} />
                     </button>

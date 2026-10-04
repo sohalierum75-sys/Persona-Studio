@@ -30,7 +30,7 @@ export default function AuthGate({ children }: Props) {
   useEffect(() => {
     if (!_bootstrapped) {
       _bootstrapped = true;
-      // App already bootstraps web auth. The standalone side panel still needs
+      // App already bootstraps web auth. The standalone floating panel still needs
       // this, but remounting the gate must not clear a completed callback error.
       if (getAuthState().status === "initialising") void initAuth();
     }

@@ -1,3 +1,4 @@
+import { confirmDelete } from "../../lib/confirm-delete";
 import React, { useRef, useState } from "react";
 import { Plus, X, ImagePlus } from "lucide-react";
 import { useStudio } from "../../store";
@@ -51,7 +52,8 @@ export default function SceneReferencesPanel({ scene }: Props) {
   }
 
   async function handleRemove(img: SceneImage) {
-    if (!confirm("Remove this image from the scene? This cannot be undone.")) return;
+    const asset = referenceAssets.find(a => a.id === img.assetId);
+    if (!await confirmDelete(img.caption || asset?.label || "Scene reference image")) return;
     await removeSceneImage(scene.id, img.id);
   }
 

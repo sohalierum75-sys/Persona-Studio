@@ -1,3 +1,4 @@
+import { confirmDelete } from "../../lib/confirm-delete";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Copy, Check, Star, Trash2, RefreshCw, Edit3, Plus,
@@ -17,7 +18,7 @@ interface Props {
   location?: Location;
   character: Character;
   fieldConfigs: FieldConfig[];
-  onAddPrompt: (p: Prompt) => void;
+  onAddPrompt: (p: Prompt | Prompt[]) => Promise<boolean>;
   onUpdatePrompt: (id: string, changes: Partial<Prompt>) => void;
   onDeletePrompt: (id: string) => void;
   onSetPrimary: (id: string) => void;
@@ -149,12 +150,12 @@ export default function PromptPreviewPanel({
     onAddPrompt(p);
   }
 
-  function addManual() {
+  async function addManual() {
     const p: Prompt = {
       id: uuid(), text: "", label: "Manual prompt", source: "manual",
       sceneHash: currentHash, createdAt: new Date().toISOString(),
     };
-    onAddPrompt(p);
+    if (!await onAddPrompt(p)) return;
     setEditingId(p.id); setEditText(""); setEditLabel("Manual prompt");
   }
 
@@ -183,12 +184,10 @@ export default function PromptPreviewPanel({
     const base = currentPrompt || prompts[0]?.text;
     if (!base) return;
     const vars = generateVariations(base, variCount);
-    vars.forEach((text, i) => {
-      onAddPrompt({
-        id: uuid(), text, label: `Variation ${i+1}`,
-        source: "generated", sceneHash: currentHash, createdAt: new Date().toISOString(),
-      });
-    });
+    void onAddPrompt(vars.map((text, i) => ({
+      id: uuid(), text, label: `Variation ${i+1}`,
+      source: "generated" as const, sceneHash: currentHash, createdAt: new Date().toISOString(),
+    })));
   }
 
   // ── Compare Mode ──────────────────────────────────────────────────────────
@@ -462,7 +461,7 @@ export default function PromptPreviewPanel({
                     </button>
                   )}
                   <button className="btn btn-ghost btn-xs" style={{ marginLeft:"auto", color:"var(--error)" }}
-                    onClick={() => { if(confirm("Delete this prompt? The scene won't be deleted.")) onDeletePrompt(p.id); }}>
+                    onClick={async () => { if (await confirmDelete(p.label || "Untitled prompt", "The scene will not be deleted.")) onDeletePrompt(p.id); }}>
                     <Trash2 size={11}/>
                   </button>
                 </div>

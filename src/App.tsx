@@ -1,3 +1,5 @@
+import DeleteConfirmationDialog from "./components/ui/DeleteConfirmationDialog";
+import UpgradeDialog from "./components/auth/UpgradeDialog";
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate, Outlet, useSearchParams } from "react-router-dom";
 import { useStudio } from "./store";
@@ -104,6 +106,9 @@ export default function App() {
   }, []);
 
   return (
+    <>
+    <UpgradeDialog />
+    <DeleteConfirmationDialog />
     <Routes>
       {/* Public homepage (unauthenticated) */}
       <Route path="/" element={<RootRoute />} />
@@ -122,5 +127,6 @@ export default function App() {
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

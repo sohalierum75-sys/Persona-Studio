@@ -77,14 +77,17 @@ async function validate(op: Op, tx: Tx, userId: string): Promise<string | null> 
   return null;
 }
 
+class PlanLimitRollback extends Error { constructor(public result: Record<string, unknown>) { super("Plan limit reached"); } }
+
 export async function applyOperations(userId: string, raw: unknown) {
-  const { ops } = z.object({ops:z.array(operationSchema).min(1).max(200)}).parse(raw);
+  const { ops, atomic } = z.object({atomic:z.boolean().optional(),ops:z.array(operationSchema).min(1).max(200)}).parse(raw);
   // Per-owner transaction lock also protects related-record checks, creates,
   // receipt insertion and version history against concurrent API instances.
-  return prisma.$transaction(async tx => {
+  try { return await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
     const user = await tx.user.findUniqueOrThrow({ where: { id: userId } });
     const unlimited = !!user.lifetimeAt || hasActiveSubscription(user);
+    const initialUsage = unlimited ? null : await getUsage(tx,userId);
     let newScenes = 0;
     const results: any[] = [];
     for (const input of ops) {
@@ -110,22 +113,34 @@ export async function applyOperations(userId: string, raw: unknown) {
       if (!unlimited && op.type === "put") {
         const usage = await getUsage(tx, userId);
         const adding = !existing || !!existing.deletedAt;
-        let limitError: string | null = null;
-        if (adding && op.kind === "character" && usage.characters >= freeLimits.characters) limitError = "1 saved character";
-        if (adding && op.kind === "episode" && usage.episodes >= freeLimits.episodes) limitError = "1 saved episode";
+        let limitError: keyof typeof freeLimits | null = null;
+        let used = 0;
+        if (adding && op.kind === "character" && usage.characters >= freeLimits.characters) { limitError = "characters"; used = usage.characters; };
+        if (adding && op.kind === "episode" && usage.episodes >= freeLimits.episodes) { limitError = "episodes"; used = usage.episodes; };
         if (op.kind === "scene") {
           const increase = promptCount(op.data) - (adding ? 0 : promptCount(existing?.data));
-          if (increase > 0 && usage.prompts + increase > freeLimits.prompts) limitError = "10 saved prompts";
+          if (increase > 0 && usage.prompts + increase > freeLimits.prompts) { limitError = "prompts"; used = usage.prompts; };
           const batchId = op.data?.bulkImportId;
-          if (batchId !== undefined && (typeof batchId !== "string" || !batchId || batchId.length > 120)) limitError = "a valid bulk import identifier";
+          if (batchId !== undefined && (typeof batchId !== "string" || !batchId || batchId.length > 120)) { results.push({opId:op.opId,status:"invalid",error:"Invalid bulk import identifier"}); continue; }
           if (adding) {
             const batchCount = typeof batchId === "string" ? await tx.entity.count({where:{userId,kind:"scene",data:{path:["bulkImportId"],equals:batchId}}}) : 0;
-            if (newScenes >= freeLimits.bulkScenes || batchCount >= freeLimits.bulkScenes) limitError = "3 scenes per bulk import";
+            if (batchCount >= freeLimits.bulkScenes || (!batchId && newScenes >= freeLimits.bulkScenes)) { limitError = "bulkScenes"; used = batchId ? batchCount : newScenes; }
           } else if ((existing?.data as any)?.bulkImportId !== batchId) {
-            limitError = "an unchanged bulk import identifier";
+            results.push({opId:op.opId,status:"invalid",error:"Bulk import identifier cannot change"}); continue;
           }
         }
-        if (limitError) { results.push({opId:op.opId,status:"limit_reached",error:`Free plan allows ${limitError}. Upgrade for unlimited access.`,upgradeUrl:"/?pricing=1#pricing"}); continue; }
+        if (limitError) {
+          const limit = freeLimits[limitError];
+          // Report committed usage, not intermediate rows that will roll back.
+          if (limitError !== "bulkScenes") used = initialUsage![limitError];
+          const message = limitError === "bulkScenes"
+            ? `This import exceeds your Free plan limit: ${limit} scenes per bulk import. Upgrade to continue.`
+            : used >= limit
+              ? `You've reached your Free plan limit: ${used}/${limit} ${limitError}. Upgrade to continue.`
+              : `This action would exceed your Free plan limit: ${used}/${limit} ${limitError} used. Upgrade to continue.`;
+          throw new PlanLimitRollback({status:"limit_reached",resource:limitError,used,limit,
+            error:message,upgradeUrl:"/?pricing=1#pricing"});
+        }
       }
       if (op.kind === "scene" && op.type === "put" && (!existing || existing.deletedAt)) newScenes++;
       const version = (existing?.version ?? 0) + 1;
@@ -137,8 +152,16 @@ export async function applyOperations(userId: string, raw: unknown) {
       await tx.operationReceipt.create({data:{userId,opId:op.opId,fingerprint,result}});
       results.push(result);
     }
+    if (atomic) {
+      const rejected = results.find(r => r.status !== "applied" && r.status !== "unchanged");
+      if (rejected) throw new PlanLimitRollback(rejected);
+    }
     return results;
   }, {timeout:30000});
+  } catch (error) {
+    if (error instanceof PlanLimitRollback) return ops.map(op => ({...error.result,opId:op.opId}));
+    throw error;
+  }
 }
 
 syncRouter.post("/ops", async (req,res) => {

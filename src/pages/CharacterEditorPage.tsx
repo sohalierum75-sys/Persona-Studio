@@ -1,3 +1,4 @@
+import { confirmDelete } from "../lib/confirm-delete";
 ﻿import React, { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -78,7 +79,9 @@ export default function CharacterEditorPage() {
     updateCharacter(character!.id, { portraitAssetId: assetId });
   }
 
-  function removeAsset(assetId: string) {
+  async function removeAsset(assetId: string) {
+    const asset = referenceAssets.find(a => a.id === assetId);
+    if (!await confirmDelete(asset?.label || "Character reference image")) return;
     const newIds = character!.referenceAssetIds.filter((i) => i !== assetId);
     const newPortrait = character!.portraitAssetId === assetId
       ? newIds[0] ?? undefined
@@ -88,7 +91,7 @@ export default function CharacterEditorPage() {
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete "${character!.name}"? This cannot be undone.`)) return;
+    if (!await confirmDelete(character!.name)) return;
     await deleteCharacter(character!.id);
     navigate("/characters");
   }

@@ -1,3 +1,4 @@
+import { confirmDelete } from "../../lib/confirm-delete";
 /**
  * BulkSceneBuilder
  * ─────────────────────────────────────────────────────────────────────────────
@@ -23,7 +24,7 @@ import {
 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { useStudio } from "../../store";
-import { checkBulkImport } from "../../lib/billing";
+import { PlanLimitError } from "../../lib/plan-guard";
 import type { Scene, Character, Outfit, Location, FieldConfig, CameraAngle, Prompt } from "../../types";
 import { buildPrompt } from "../../utils/continuity";
 import { parseSceneText, EXAMPLE_PASTE } from "../../utils/parseSceneText";
@@ -102,7 +103,7 @@ export default function BulkSceneBuilder({
   episode, character, charOutfits, locations, fieldConfigs,
   existingSceneCount, onCreated, onClose,
 }: Props) {
-  const { addScene, addScenePrompts, updateEpisode } = useStudio();
+  const { addScenes } = useStudio();
 
   // ── Entry mode / paste state ─────────────────────────────────────────────
   const [entryMode, setEntryMode]     = useState<EntryMode>("paste");
@@ -232,7 +233,11 @@ export default function BulkSceneBuilder({
   // ── Row manipulation ─────────────────────────────────────────────────────
   const updateRow  = (id: string, u: Partial<DraftRow>) =>
     setRows(rs => rs.map(r => r.id === id ? { ...r, ...u, errors: [] } : r));
-  const removeRow  = (id: string) => setRows(rs => rs.filter(r => r.id !== id));
+  const removeRow = async (id: string) => {
+    const row = rows.find(r => r.id === id);
+    if (!row || !await confirmDelete(row.title || "Untitled scene row")) return;
+    setRows(rs => rs.filter(r => r.id !== id));
+  };
   const toggleSel  = (id: string) => updateRow(id, { selected: !rows.find(r=>r.id===id)?.selected });
   const toggleAll  = () => {
     const allSel = rows.every(r => r.selected);
@@ -384,17 +389,16 @@ export default function BulkSceneBuilder({
 
   // ── Create scenes ─────────────────────────────────────────────────────────
   async function handleCreate() {
-    if (!validate()) return;
+    if (creating || !validate()) return;
     setCreating(true);
     const selected = rows.filter(r => r.selected);
     try {
-      await checkBulkImport(selected.length);
       const bulkImportId = uuid();
       const created: Scene[] = [];
       let prevRow: DraftRow | undefined;
       for (let i = 0; i < selected.length; i++) {
         const row = selected[i];
-        const sc  = await addScene({ ...resolveRow(row, i, prevRow), bulkImportId });
+        const sc: Scene = { ...resolveRow(row, i, prevRow), bulkImportId, id:uuid(), createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() };
         created.push(sc);
         prevRow = row;
       }
@@ -413,17 +417,18 @@ export default function BulkSceneBuilder({
               sceneHash: [sc.sceneDescription||"", sc.outfitId||"", sc.locationId||""].join("|"),
               createdAt: new Date().toISOString(),
             };
-            await addScenePrompts(sc.id, [p]);
+            (sc.prompts ??= []).push(p);
             promptCount++;
           }
         }
       }
+      await addScenes(created);
       setSummary(
         `${created.length} scene${created.length!==1?"s":""} added` +
         (batch.generatePrompts ? `, ${promptCount} prompt${promptCount!==1?"s":""} built` : "")
       );
       onCreated(created[0]?.id ?? "");
-    } catch (error) { window.alert(error instanceof Error ? error.message : "Import failed"); }
+    } catch (error) { if (!(error instanceof PlanLimitError)) window.alert(error instanceof Error ? error.message : "Import failed"); }
     finally { setCreating(false); }
   }
 

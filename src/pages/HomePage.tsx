@@ -312,7 +312,7 @@ export default function HomePage() {
           </section>
 
           <section className="hp-bento-card hp-b-sync" aria-label="Sync between Studio and extension">
-            <div className="hp-card-head"><h3><Monitor size={15} /> Studio &amp; side panel, in sync</h3></div>
+            <div className="hp-card-head"><h3><Monitor size={15} /> Studio &amp; floating panel, in sync</h3></div>
             <p>Sign in with the same Google account and your cast follows you — full workspace on the left, prompts on the right.</p>
             <div className="hp-sync-demo" aria-hidden="true">
               <span className="hp-sync-device"><Monitor size={18} /></span>
@@ -324,11 +324,11 @@ export default function HomePage() {
           <section className="hp-bento-card hp-b-extension" id="extension" aria-label="Chrome extension">
             <div className="hp-card-head">
               <h3><Puzzle size={15} /> Chrome extension</h3>
-              <span className="hp-chip-badge">Side panel</span>
+              <span className="hp-chip-badge">Floating panel</span>
             </div>
             <p>Your Studio, alongside your generator: choose a character, episode, and scene — copy the same prompt without leaving your tab.</p>
 
-            <div className="hp-ext-preview" role="img" aria-label="Preview of the Persona Studio Chrome side panel: character, episode, and scene selectors above a prompt preview and copy button">
+            <div className="hp-ext-preview" role="img" aria-label="Preview of the Persona Studio Chrome floating panel: character, episode, and scene selectors above a prompt preview and copy button">
               <div className="hp-ext-header">
                 <span className="hp-ext-brand"><Brand /></span>
                 <span className="hp-ext-sync"><Check size={11} /> Synced</span>

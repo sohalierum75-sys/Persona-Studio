@@ -11,7 +11,7 @@ import type {
 } from "../types";
 import { DEFAULT_FIELD_CONFIGS } from "../types";
 import {
-  characterDB, episodeDB, sceneDB, outfitDB, locationDB,
+  localMutations, characterDB, episodeDB, sceneDB, outfitDB, locationDB,
   referenceAssetDB, usageRecordDB, continuityGroupDB, settingsDB,
 } from "../db";
 import { SETTINGS_ID } from "../lib/sync";
@@ -56,6 +56,7 @@ interface StudioState {
 
   // Scenes
   addScene: (s: Omit<Scene, "id" | "createdAt" | "updatedAt">) => Promise<Scene>;
+  addScenes: (scenes: Scene[]) => Promise<void>;
   updateScene: (id: string, updates: Partial<Scene>) => Promise<void>;
   deleteScene: (id: string) => Promise<void>;
   reorderScenes: (episodeId: string, orderedIds: string[]) => Promise<void>;
@@ -101,6 +102,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   reducedMotion: false,
 };
 
+let promptSave: Promise<void> = Promise.resolve();
 const now = () => new Date().toISOString();
 
 export const useStudio = create<StudioState>()(
@@ -247,6 +249,22 @@ export const useStudio = create<StudioState>()(
       set((s) => { s.scenes.push(sc); });
       return sc;
     },
+    addScenes: async (scenes) => {
+      const episodes = get().episodes.filter(ep => scenes.some(sc => sc.episodeId === ep.id)).map(ep => ({
+        ...ep, sceneIds:[...ep.sceneIds,...scenes.filter(sc => sc.episodeId === ep.id).map(sc => sc.id)], updatedAt:now(),
+      }));
+      await localMutations([
+        ...episodes.map(value => ({store:"episodes" as const,type:"put" as const,value})),
+        ...scenes.map(value => ({store:"scenes" as const,type:"put" as const,value})),
+      ]);
+      set(s => {
+        s.scenes.push(...scenes);
+        for (const episode of episodes) {
+          const index = s.episodes.findIndex(ep => ep.id === episode.id);
+          if (index >= 0) s.episodes[index] = episode;
+        }
+      });
+    },
     updateScene: async (id, updates) => {
       const sc = get().scenes.find((x) => x.id === id);
       if (!sc) return;
@@ -294,19 +312,23 @@ export const useStudio = create<StudioState>()(
         });
       }
     },
-    addScenePrompts: async (sceneId, prompts) => {
-      const sc = get().scenes.find((x) => x.id === sceneId);
-      if (!sc || prompts.length === 0) return;
-      const updated = {
-        ...sc,
-        prompts: [...(sc.prompts ?? []), ...prompts],
-        updatedAt: now(),
-      };
-      await sceneDB.put(updated);
-      set((s) => {
-        const idx = s.scenes.findIndex((x) => x.id === sceneId);
-        if (idx >= 0) s.scenes[idx] = updated;
+    addScenePrompts: (sceneId, prompts) => {
+      const save = promptSave.catch(() => {}).then(async () => {
+        const sc = get().scenes.find((x) => x.id === sceneId);
+        if (!sc || prompts.length === 0) return;
+        const updated = {
+          ...sc,
+          prompts: [...(sc.prompts ?? []), ...prompts],
+          updatedAt: now(),
+        };
+        await sceneDB.put(updated);
+        set((s) => {
+          const idx = s.scenes.findIndex((x) => x.id === sceneId);
+          if (idx >= 0) s.scenes[idx] = updated;
+        });
       });
+      promptSave = save;
+      return save;
     },
     deleteScenePrompt: async (sceneId, promptId) => {
       const sc = get().scenes.find((x) => x.id === sceneId);

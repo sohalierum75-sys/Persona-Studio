@@ -7,8 +7,10 @@
  */
 
 import { API_URL, IS_EXTENSION } from "./config";
+import { currentAccount } from "../db";
+import { getPending } from "./queue";
 import { apiFetch } from "./api";
-import { getAuthState } from "./auth";
+
 
 export const UPGRADE_URL = `${IS_EXTENSION ? API_URL : ""}/?pricing=1#pricing`;
 
@@ -48,14 +50,22 @@ export function startCheckout(plan: BillingPlan): Promise<{ url: string }> {
   return apiFetch<{ url: string }>("/api/billing/checkout", { method: "POST", body: { plan } });
 }
 
-export function fetchEntitlements(): Promise<Entitlements> {
-  return apiFetch<Entitlements>("/api/billing/entitlements");
-}
-
-export async function checkBulkImport(count: number): Promise<void> {
-  if (getAuthState().status !== "signed-in") return;
-  const ent = await fetchEntitlements();
-  if (ent.limits.bulkScenes !== null && count > ent.limits.bulkScenes) {
-    throw new Error(`Free plan allows ${ent.limits.bulkScenes} scenes per bulk import. Select fewer scenes or upgrade from the account menu.`);
+export async function fetchEntitlements(): Promise<Entitlements> {
+  const userId = currentAccount();
+  const ent = await apiFetch<Entitlements>("/api/billing/entitlements", {expectedUser:userId ?? undefined});
+  if (!userId) return ent;
+  const pending = await getPending(userId);
+  if (!pending.length) return ent;
+  const {records} = await apiFetch<{records:any[]}>("/api/sync", {expectedUser:userId});
+  const rows = new Map(records.filter(r => !r.deleted).map(r => [r.id,r]));
+  for (const op of pending) {
+    if (op.type === "delete") rows.delete(op.id);
+    else rows.set(op.id,{kind:op.kind,data:op.data});
   }
+  const live = [...rows.values()];
+  const characters = live.filter(r => r.kind === "character");
+  const episodes = live.filter(r => r.kind === "episode" && rows.get(r.data.characterId)?.kind === "character");
+  const episodeIds = new Set(episodes.map(r => r.data.id));
+  const scenes = live.filter(r => r.kind === "scene" && episodeIds.has(r.data.episodeId));
+  return {...ent,usage:{characters:characters.length,episodes:episodes.length,prompts:scenes.reduce((n,r) => n + (r.data.prompts ?? r.data.importedPrompts ?? []).length,0)}};
 }

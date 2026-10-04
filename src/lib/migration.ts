@@ -1,3 +1,4 @@
+import { showPlanLimit } from "./plan-guard";
 import { getLocalBackup } from "./accounts";
 import { getDBForAccount, storeKinds, type StoreName } from "../db";
 import { apiFetch } from "./api";
@@ -18,21 +19,24 @@ export async function importLocalProjects(userId:string, progress:(text:string)=
   const remap=(v:any):any => typeof v==="string" ? mapping[v] ?? v : Array.isArray(v) ? v.map(remap) : v && typeof v==="object" ? Object.fromEntries(Object.entries(v).map(([k,x])=>[k,remap(x)])) : v;
   const uploaded:Set<string>=new Set((await db.get("meta","import-progress"))?.value ?? []);
   const records=order.flatMap(store=>(backup.stores[store] ?? []).map(row=>({store,data:remap(row)})));
-  for(const {store,data} of records){
-    const opId=`migration:${store}:${data.id}`;
-    if(uploaded.has(opId))continue;
-    progress(`Uploading ${uploaded.size+1} of ${records.length}…`);
-    // Keep existing account preferences; never silently overwrite them.
-    if(store==="settings" && await db.get("settings","app")){
-      await db.put("meta",{key:"imported-local-settings",value:data});
-      uploaded.add(opId);
-    }else{
-      const res=await apiFetch<{results:Array<{status:string;error?:string}>}>("/api/sync/ops",{method:"POST",expectedUser:userId,body:{ops:[{opId,kind:storeKinds[store],id:data.id,type:"put",baseVersion:0,data}]}});
-      if(!["applied","unchanged"].includes(res.results[0]?.status)) throw new Error(res.results[0]?.error ?? "Import conflicts with cloud data. Your local backup is preserved.");
-      uploaded.add(opId);
-    }
-    await db.put("meta",{key:"import-progress",value:[...uploaded]});
+  const remaining = records.filter(({store,data}) => !uploaded.has(`migration:${store}:${data.id}`));
+  const keepSettings = !!await db.get("settings","app");
+  const ops = remaining.filter(({store}) => store !== "settings" || !keepSettings).map(({store,data}) => ({
+    opId:`migration:${store}:${data.id}`,kind:storeKinds[store],id:data.id,type:"put",baseVersion:0,data,
+  }));
+  if (ops.length > 200) throw new Error("This backup exceeds the 200-record atomic import size. Your backup is preserved.");
+  if (ops.length) {
+    progress(`Checking and importing ${ops.length} records...`);
+    const res = await apiFetch<{results:Array<{status:string;error?:string}>}>("/api/sync/ops",{method:"POST",expectedUser:userId,body:{atomic:true,ops}});
+    const rejected = res.results.find(r => !["applied","unchanged"].includes(r.status));
+    if (rejected?.status === "limit_reached") showPlanLimit(rejected.error!);
+    if (rejected) throw new Error(rejected.error ?? "Import conflicts with cloud data. Your backup is preserved.");
   }
+  for (const {store,data} of remaining) {
+    if (store === "settings" && keepSettings) await db.put("meta",{key:"imported-local-settings",value:data});
+    uploaded.add(`migration:${store}:${data.id}`);
+  }
+  await db.put("meta",{key:"import-progress",value:[...uploaded]});
   if(!records.every(({store,data})=>uploaded.has(`migration:${store}:${data.id}`))) throw new Error("Import is incomplete; retry to resume.");
   await db.put("meta",{key:"import-complete",value:true});
   await reconcile({force:true});
