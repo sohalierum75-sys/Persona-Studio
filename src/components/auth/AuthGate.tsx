@@ -9,7 +9,7 @@ import { useAuth, getAuthState, initAuth, signInWithGoogle } from "../../lib/aut
 import { initSync, teardownSync, setOnRemoteChange } from "../../lib/sync";
 import { ensureAccountCache } from "../../lib/accounts";
 import { onAuthExpired } from "../../lib/api";
-import { API_CONFIGURED } from "../../lib/config";
+import { API_CONFIGURED, IS_EXTENSION } from "../../lib/config";
 import { useStudio } from "../../store";
 import MigrationPrompt from "./MigrationPrompt";
 import ConflictReview from "./ConflictReview";
@@ -143,7 +143,9 @@ export function SignInScreen({
           Your data is stored privately and never shared.
           You can use the app offline — changes sync when you reconnect.
         </p>
-        <Link className="auth-back" to="/">Back to Persona Studio</Link>
+        {/* Router link only on the web app — the floating panel mounts without a
+            Router, and a <Link> there crashes the whole tree with a null context. */}
+        {!IS_EXTENSION && <Link className="auth-back" to="/">Back to Persona Studio</Link>}
       </div>
     </div>
   );
