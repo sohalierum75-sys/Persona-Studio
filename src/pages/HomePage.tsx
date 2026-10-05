@@ -331,7 +331,7 @@ export default function HomePage() {
             <div className="hp-ext-preview" role="img" aria-label="Preview of the Persona Studio Chrome floating panel: character, episode, and scene selectors above a prompt preview and copy button">
               <div className="hp-ext-header">
                 <span className="hp-ext-brand"><Brand /></span>
-                <span className="hp-ext-sync"><Check size={11} /> Synced</span>
+                <span className="hp-ext-sync"><Check size={11} /> Saved</span>
                 <span className="hp-ext-avatar" />
               </div>
               <div className="hp-ext-body">

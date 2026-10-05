@@ -1,13 +1,13 @@
 ﻿import { useState, useRef, useEffect, useId } from "react";
 import { ArrowUpRight, Cloud, LogOut, User } from "lucide-react";
 import { useAuth, signOut } from "../../lib/auth";
-import { useSyncState } from "../../lib/sync";
+import { useSyncDisplay } from "../../lib/sync";
 import { API_CONFIGURED } from "../../lib/config";
 import { fetchEntitlements, UPGRADE_URL, type Entitlements } from "../../lib/billing";
 
 export default function AccountMenu() {
   const auth = useAuth();
-  const sync = useSyncState();
+  const { shown, sync } = useSyncDisplay();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -45,12 +45,12 @@ export default function AccountMenu() {
   const name = user.name || user.email?.split("@")[0] || "User";
   const email = user.email ?? "";
   const avatarUrl = user.avatarUrl ?? undefined;
-  const syncLabel = sync.status === "syncing" ? "Saving…"
-    : sync.status === "synced" ? "Up to date"
-    : sync.status === "offline" ? "Offline"
-    : sync.status === "error" ? "Sync failed"
-    : sync.status === "conflict" ? `${sync.conflicts.length} conflict${sync.conflicts.length !== 1 ? "s" : ""}`
-    : sync.status === "session-expired" ? "Session expired" : "Waiting to sync";
+  const syncLabel = shown === "saving" ? "Saving…"
+    : shown === "saved" ? "Saved"
+    : shown === "offline" ? "Offline"
+    : shown === "error" ? "Sync failed"
+    : shown === "conflict" ? `${sync.conflicts.length} conflict${sync.conflicts.length !== 1 ? "s" : ""}`
+    : shown === "session-expired" ? "Session expired" : "";
 
   return <div ref={ref} className="account-menu" onBlur={e => {
     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
@@ -85,14 +85,14 @@ export default function AccountMenu() {
           </a>}
         </> : <p className="account-menu-caption" role="status">{loading ? "Loading plan usage…" : <>Plan usage unavailable. <a href={UPGRADE_URL} target="_blank" rel="noreferrer">View plans</a></>}</p>}
       </div>
-      <div className="account-menu-sync">
+      {shown && <div className="account-menu-sync">
         <div className="account-menu-sync-heading"><span><Cloud size={14} /> Cloud sync</span>
-          <span className={`account-menu-sync-status is-${sync.status}`} role="status">{syncLabel}</span>
+          <span className={`account-menu-sync-status is-${shown === "saving" ? "syncing" : shown === "saved" ? "synced" : shown}`} role="status">{syncLabel}</span>
         </div>
         {sync.lastSynced && <p className="account-menu-caption">Last synced {new Date(sync.lastSynced).toLocaleTimeString()}</p>}
         {sync.pendingCount > 0 && <p className="account-menu-pending">{sync.pendingCount} change{sync.pendingCount !== 1 ? "s" : ""} waiting to sync</p>}
         {sync.error && <p className="account-menu-error" role="alert">{sync.error} Your pending changes remain on this device. <a href={UPGRADE_URL} target="_blank" rel="noreferrer">View plans</a></p>}
-      </div>
+      </div>}
       <div className="account-menu-divider" />
       <button className="account-menu-item account-menu-item--danger" onClick={() => { setOpen(false); void signOut(); }}>
         <LogOut size={14} /> Sign out

@@ -5,8 +5,8 @@ import { getDBForAccount, setMutationListener, storeKinds, type StoreName } from
 export const SETTINGS_ID = "app";
 export type SyncStatus = "idle"|"syncing"|"synced"|"offline"|"error"|"conflict"|"session-expired";
 export interface ConflictItem { key:string; kind:RecordKind; id:string; mine:Record<string,unknown>|null; theirs:{data:Record<string,unknown>|null;version:number;deleted:boolean;updatedAt:string} }
-export interface SyncState {status:SyncStatus;pendingCount:number;lastSynced:string|null;error:string|null;conflicts:ConflictItem[]}
-const empty:SyncState = {status:"idle",pendingCount:0,lastSynced:null,error:null,conflicts:[]};
+export interface SyncState {status:SyncStatus;pendingCount:number;lastSynced:string|null;error:string|null;conflicts:ConflictItem[];dirty:boolean;savedAt:number|null}
+const empty:SyncState = {status:"idle",pendingCount:0,lastSynced:null,error:null,conflicts:[],dirty:false,savedAt:null};
 let state = {...empty};
 const listeners = new Set<(s:SyncState)=>void>();
 let active:string|null = null;
@@ -19,10 +19,34 @@ function publish(s:Partial<SyncState>) {state={...state,...s}; listeners.forEach
 export function getSyncState(){return state;}
 export function subscribeSync(l:(s:SyncState)=>void){listeners.add(l);l(state);return ()=>{listeners.delete(l);};}
 export function useSyncState(){const [s,set]=useState(state);useEffect(()=>subscribeSync(set),[]);return s;}
+// Display model for status UIs: silent while idle, "Saving…" while a local
+// change is in flight, "Saved" briefly after the server confirms, and the
+// attention states (offline with pending changes, error, conflict, expired
+// session) for as long as they need attention. Background polls with nothing
+// to save stay silent.
+export const SAVED_VISIBLE_MS=2500;
+export type SyncDisplay="saving"|"saved"|"offline"|"error"|"conflict"|"session-expired";
+export function useSyncDisplay():{shown:SyncDisplay|null;sync:SyncState}{
+  const sync=useSyncState();
+  const [savedVisible,setSavedVisible]=useState(false);
+  useEffect(()=>{
+    if(sync.savedAt==null){setSavedVisible(false);return;}
+    setSavedVisible(true);
+    const t=setTimeout(()=>setSavedVisible(false),SAVED_VISIBLE_MS);
+    return ()=>clearTimeout(t);
+  },[sync.savedAt]);
+  const {status,dirty}=sync;
+  let shown:SyncDisplay|null=null;
+  if(status==="error"||status==="conflict"||status==="session-expired")shown=status;
+  else if(status==="offline"&&dirty)shown="offline";
+  else if(status==="syncing"&&dirty)shown="saving";
+  else if(status==="synced"&&savedVisible)shown="saved";
+  return {shown,sync};
+}
 export function setOnRemoteChange(cb:(()=>void)|null){remote=cb;}
 export async function initSync(userId:string){
   teardownSync(); active=userId;
-  setMutationListener(()=>{publish({status:navigator.onLine ? "syncing":"offline"});clearTimeout(debounce);debounce=setTimeout(()=>void reconcile(),350);});
+  setMutationListener(()=>{publish({status:navigator.onLine ? "syncing":"offline",dirty:true});clearTimeout(debounce);debounce=setTimeout(()=>void reconcile(),350);});
   window.addEventListener("online",wake);window.addEventListener("focus",wake);window.addEventListener("offline",offline);
   document.addEventListener("visibilitychange",visible);
   timer=setInterval(()=>{if(document.visibilityState === "visible") void reconcile();},10000);
@@ -44,6 +68,7 @@ export async function reconcile(opts:{force?:boolean}={}):Promise<void>{
     try{
       if(!navigator.onLine)throw new ApiError(0,"Offline");
       const ops=(await getPending(userId)).sort((a,b)=>priority[a.kind]-priority[b.kind]);
+      let processed=0;
       // Small batches keep large image records below the HTTP body limit.
       for(const op of ops){
         if(active!==userId)return;
@@ -51,7 +76,7 @@ export async function reconcile(opts:{force?:boolean}={}):Promise<void>{
         if(!opts.force && op.lastAttempt && Date.now()-Date.parse(op.lastAttempt)<Math.min(60000,1000*2**Math.min(op.attempts,6)))continue;
         const response=await apiFetch<{results:any[]}>("/api/sync/ops",{method:"POST",expectedUser:userId,body:{ops:[{opId:op.revision,kind:op.kind,id:op.id,type:op.type,baseVersion:op.baseVersion,data:op.data}]}});
         const result=response.results[0];
-        if(result?.status==="applied" || result?.status==="unchanged")await acknowledge(op,result.version);
+        if(result?.status==="applied" || result?.status==="unchanged"){await acknowledge(op,result.version);processed++;}
         else if(result?.status==="conflict"){
           const latest=(await getPending(userId)).find(p=>p.key===op.key) ?? op;
           conflicts.push({key:op.key,kind:op.kind,id:op.id,mine:latest.type==="put" ? latest.data ?? null:null,theirs:result.record});
@@ -73,10 +98,11 @@ export async function reconcile(opts:{force?:boolean}={}):Promise<void>{
       await tx.done;
       if(active!==userId)return;
       remote?.();
-      update({pendingCount:pending.length,conflicts,status:conflicts.length ? "conflict":pending.some((p:any)=>p.error) ? "error":pending.length ? "syncing":"synced",error:pending.find((p:any)=>p.error)?.error ?? null,lastSynced:pending.length ? state.lastSynced:new Date().toISOString()});
+      const stillDirty=conflicts.length>0 || pending.length>0;
+      update({pendingCount:pending.length,conflicts,status:conflicts.length ? "conflict":pending.some((p:any)=>p.error) ? "error":pending.length ? "syncing":"synced",error:pending.find((p:any)=>p.error)?.error ?? null,lastSynced:pending.length ? state.lastSynced:new Date().toISOString(),dirty:stillDirty,savedAt:stillDirty ? state.savedAt : processed>0 || state.dirty ? Date.now() : state.savedAt});
     }catch(e){
       const pending=await getPending(userId);
-      update({pendingCount:pending.length,conflicts,status:e instanceof ApiError && e.status===0 ? "offline":e instanceof ApiError && e.status===401 ? "session-expired":"error",error:e instanceof Error ? e.message:"Sync failed"});
+      update({pendingCount:pending.length,conflicts,status:e instanceof ApiError && e.status===0 ? "offline":e instanceof ApiError && e.status===401 ? "session-expired":"error",error:e instanceof Error ? e.message:"Sync failed",dirty:pending.length>0 || state.dirty});
     }
   });
 }

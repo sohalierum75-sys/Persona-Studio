@@ -192,7 +192,9 @@ test('account shows identity, usage, sync and actions; Escape restores focus', a
   await panel.getByText('Free plan', { exact: true }).waitFor();
   assert.match(await panel.innerText(), /Auth Test[\s\S]*auth@example.test/);
   assert.equal(await panel.locator('dl > div').count(), 3);
-  await panel.getByText('Cloud sync', { exact: true }).waitFor();
+  // Status UI is activity-only: the Cloud sync block appears during/just after
+  // a save, then hides while idle (waitFor detached also rides out the "Saved" flash).
+  await panel.getByText('Cloud sync', { exact: true }).waitFor({ state: 'detached' });
   await panel.getByRole('link', { name: 'Upgrade to unlimited' }).waitFor();
   await panel.getByRole('button', { name: 'Sign out' }).waitFor();
   if (process.env.ACCOUNT_MENU_SCREENSHOT) await page.screenshot({ path: process.env.ACCOUNT_MENU_SCREENSHOT });
