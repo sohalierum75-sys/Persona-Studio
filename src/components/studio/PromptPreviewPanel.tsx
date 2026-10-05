@@ -2,7 +2,7 @@ import { confirmDelete } from "../../lib/confirm-delete";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Copy, Check, Star, Trash2, RefreshCw, Edit3, Plus,
-  ChevronDown, ChevronUp, Columns2, X, Zap, Settings2,
+  ChevronDown, ChevronUp, Columns2, X, Settings2,
 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import type { Scene, Character, Outfit, Location, FieldConfig, Prompt } from "../../types";
@@ -87,19 +87,6 @@ function SavedPromptText({ text, expanded, onToggle }: {
   );
 }
 
-// Build N structural variations of a prompt by reordering / rephrasing sections
-function generateVariations(baseText: string, count: number): string[] {
-  const lines = baseText.split("\n").filter(Boolean);
-  if (lines.length < 2) return Array(count).fill(baseText);
-  const results: string[] = [];
-  for (let i = 0; i < count; i++) {
-    // Rotate lines so each variation leads with a different section
-    const rotated = [...lines.slice(i % lines.length), ...lines.slice(0, i % lines.length)];
-    results.push(rotated.join("\n"));
-  }
-  return results;
-}
-
 export default function PromptPreviewPanel({
   scene, outfit, location, character, fieldConfigs,
   onAddPrompt, onUpdatePrompt, onDeletePrompt, onSetPrimary,
@@ -110,7 +97,6 @@ export default function PromptPreviewPanel({
   const [editingId, setEditingId]    = useState<string|null>(null);
   const [editText,  setEditText]     = useState("");
   const [editLabel, setEditLabel]    = useState("");
-  const [variCount, setVariCount]    = useState(3);
   const [expandedId,setExpandedId]   = useState<string|null>(null);
   const [labelEditId, setLabelEditId]= useState<string|null>(null);
   const [labelDraft, setLabelDraft]  = useState("");
@@ -178,16 +164,6 @@ export default function PromptPreviewPanel({
 
   function toggleCompare(id: string) {
     setCompareIds(prev => prev.includes(id) ? prev.filter(x=>x!==id) : prev.length < 3 ? [...prev,id] : prev);
-  }
-
-  function handleGenerateVariations() {
-    const base = currentPrompt || prompts[0]?.text;
-    if (!base) return;
-    const vars = generateVariations(base, variCount);
-    void onAddPrompt(vars.map((text, i) => ({
-      id: uuid(), text, label: `Variation ${i+1}`,
-      source: "generated" as const, sceneHash: currentHash, createdAt: new Date().toISOString(),
-    })));
   }
 
   // ── Compare Mode ──────────────────────────────────────────────────────────
@@ -469,19 +445,6 @@ export default function PromptPreviewPanel({
             </div>
           );
         })}
-
-        {/* ── Generate N variations ──────────────────────────────────────── */}
-        <div style={{ marginTop:4, padding:"12px 14px", background:"var(--bg-elevated)", border:"1px dashed var(--border)", borderRadius:"var(--radius-sm)" }}>
-          <div style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:10 }}>Generate variations</div>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <input type="range" min={2} max={10} value={variCount} onChange={e=>setVariCount(+e.target.value)} style={{ flex:1, accentColor:"var(--accent)" }}/>
-            <span style={{ fontSize:12, fontWeight:700, minWidth:16, color:"var(--accent)" }}>{variCount}</span>
-            <button className="btn btn-secondary btn-sm" onClick={handleGenerateVariations} disabled={!currentPrompt.trim()}>
-              <Zap size={12}/> Generate {variCount}
-            </button>
-          </div>
-          <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:6 }}>Creates {variCount} structurally varied prompts from the current scene.</div>
-        </div>
 
         </div>
       </div>
