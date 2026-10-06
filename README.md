@@ -74,9 +74,9 @@ POST /api/sync/ops
 
 The root Dockerfile builds both clients and the API. The Compose database uses a named persistent volume; image data lives in that same database. Never run `docker compose down -v` against production data.
 
-1. Replace `studio.example.com` in `deploy/Caddyfile`. Point DNS to the host and permit ports 80/443.
-2. Set root `PUBLIC_BASE_URL=https://studio.example.com`, `NODE_ENV=production`, and a random database password. Set backend `PUBLIC_BASE_URL`, `ALLOWED_ORIGINS`, Google credentials and a strong JWT secret. Set `ALLOW_TEST_LOGIN=false`.
-3. Run `docker compose -f compose.yaml -f deploy/compose.production.yaml up --build -d`.
+1. Production uses `personastudio.site` and `www.personastudio.site` in `deploy/Caddyfile`, pointing to `162.35.27.103`. Permit inbound TCP ports 80/443. Caddy redirects www permanently to the HTTPS apex, preserving path and query string.
+2. Production secrets live in `/opt/persona-studio/.env`. The deployment script manages `PUBLIC_BASE_URL=https://personastudio.site` and `ALLOWED_ORIGINS=https://personastudio.site`. Set Google credentials and a strong JWT secret. Set `ALLOW_TEST_LOGIN=false`.
+3. Use the existing GitHub Actions Build & Deploy workflow. It copies deployment files to `/opt/persona-studio/deploy` and runs `deploy/deploy.sh` using the SHA-tagged API image. The production Compose file is standalone; do not merge the local-development `compose.yaml` into it. See [WWW and HTTPS deployment instructions](deploy/README.md) for a proxy-only update.
 4. Register the production OAuth callback and extension ID. Distribute the extension built with the production `VITE_API_URL`.
 
 Caddy provides HTTPS and restrictive browser security headers. PostgreSQL and the API bind only to loopback on the host. The app refuses production startup with test login enabled or without an HTTPS public URL. Put secrets in your host secret manager; do not commit them. For multiple API replicas, perform migrations once as a release job and enforce shared auth request limits at the edge. The per-owner PostgreSQL transaction lock makes mutations safe across replicas; polling works across replicas without a shared realtime service.

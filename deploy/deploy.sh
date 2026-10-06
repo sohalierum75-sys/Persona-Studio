@@ -118,8 +118,16 @@ if [ ! -f "$CADDYFILE" ]; then
   exit 1
 fi
 
+# Validate before replacing running services. Caddy owns certificates; do not
+# run Certbot or delete the persistent caddy_data volume.
+$COMPOSE run --rm --no-deps caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
 $COMPOSE pull api
 $COMPOSE up -d --remove-orphans
+
+# A bind-mounted Caddyfile change does not cause Compose to recreate Caddy.
+# Reload explicitly so hostnames/redirects apply on every deployment.
+$COMPOSE exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 
 # Health check: the API must report healthy within ~60s
 for i in $(seq 1 30); do

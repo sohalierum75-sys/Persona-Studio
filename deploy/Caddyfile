@@ -1,4 +1,9 @@
-# Caddy provisions and renews TLS for this hostname.
+# Caddy provisions and renews TLS for both HTTPS hostnames.
+# Keep Cloudflare SSL/TLS on Full (strict) when proxying either hostname.
+# Explicit HTTP handling sends www straight to the canonical HTTPS URL.
+http://www.personastudio.site, https://www.personastudio.site {
+    redir https://personastudio.site{uri} 301
+}
 #
 # The frontend uses clean history-API URLs (/characters, /episodes/:id, …).
 # The SPA dist ships inside the api image, so the api serves index.html for
