@@ -30,17 +30,18 @@ export function useSyncDisplay():{shown:SyncDisplay|null;sync:SyncState}{
   const sync=useSyncState();
   const [savedVisible,setSavedVisible]=useState(false);
   useEffect(()=>{
-    if(sync.savedAt==null){setSavedVisible(false);return;}
+    const remaining=sync.savedAt==null ? 0 : sync.savedAt+SAVED_VISIBLE_MS-Date.now();
+    if(remaining<=0){setSavedVisible(false);return;}
     setSavedVisible(true);
-    const t=setTimeout(()=>setSavedVisible(false),SAVED_VISIBLE_MS);
+    const t=setTimeout(()=>setSavedVisible(false),remaining);
     return ()=>clearTimeout(t);
   },[sync.savedAt]);
   const {status,dirty}=sync;
   let shown:SyncDisplay|null=null;
   if(status==="error"||status==="conflict"||status==="session-expired")shown=status;
-  else if(status==="offline"&&dirty)shown="offline";
-  else if(status==="syncing"&&dirty)shown="saving";
-  else if(status==="synced"&&savedVisible)shown="saved";
+  else if(status==="offline"&&(dirty||sync.pendingCount>0))shown="offline";
+  else if(status==="syncing"&&(dirty||sync.pendingCount>0))shown="saving";
+  else if(status==="synced"&&!dirty&&sync.pendingCount===0&&savedVisible&&sync.savedAt!=null&&Date.now()<sync.savedAt+SAVED_VISIBLE_MS)shown="saved";
   return {shown,sync};
 }
 export function setOnRemoteChange(cb:(()=>void)|null){remote=cb;}

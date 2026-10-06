@@ -86,10 +86,9 @@ export default function AccountMenu() {
         </> : <p className="account-menu-caption" role="status">{loading ? "Loading plan usage…" : <>Plan usage unavailable. <a href={UPGRADE_URL} target="_blank" rel="noreferrer">View plans</a></>}</p>}
       </div>
       {shown && <div className="account-menu-sync">
-        <div className="account-menu-sync-heading"><span><Cloud size={14} /> Cloud sync</span>
+        <div className="account-menu-sync-heading"><span><Cloud size={14} /> Save status</span>
           <span className={`account-menu-sync-status is-${shown === "saving" ? "syncing" : shown === "saved" ? "synced" : shown}`} role="status">{syncLabel}</span>
         </div>
-        {sync.lastSynced && <p className="account-menu-caption">Last synced {new Date(sync.lastSynced).toLocaleTimeString()}</p>}
         {sync.pendingCount > 0 && <p className="account-menu-pending">{sync.pendingCount} change{sync.pendingCount !== 1 ? "s" : ""} waiting to sync</p>}
         {sync.error && <p className="account-menu-error" role="alert">{sync.error} Your pending changes remain on this device. <a href={UPGRADE_URL} target="_blank" rel="noreferrer">View plans</a></p>}
       </div>}

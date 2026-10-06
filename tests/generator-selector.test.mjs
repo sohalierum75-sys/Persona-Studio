@@ -52,6 +52,9 @@ async function openEpisodePage(t) {
   page.on('pageerror', e => errors.push(String(e)));
   await page.route('**/api/**', async route => {
     const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/api/sync/ops') {
+      return route.fulfill({ json: { results: route.request().postDataJSON().ops.map(() => ({ status: 'applied', version: 1 })) } });
+    }
     if (pathname === '/api/billing/config') return route.fulfill({ json: { configured: false, lifetime: { limit: 50, claimed: null, remaining: null } } });
     if (pathname === '/api/billing/entitlements') {
       return route.fulfill({ json: { plan: 'free', lifetime: { active: false, since: null }, subscription: null, limits: { characters: 5, episodes: 5, prompts: 50, bulkScenes: 10 }, usage: { characters: 1, episodes: 1, prompts: 0 } } });
@@ -88,6 +91,51 @@ async function openEpisodePage(t) {
 
 const promptText = page => page.locator('.ppp-preview').innerText();
 const openOptions = page => page.getByRole('button', { name: /Generator options/ }).click();
+
+test('save status waits for server confirmation, expires, and stays silent after remount', async t => {
+  const { page, errors } = await openEpisodePage(t);
+  const indicator = page.locator('.sync-status-btn');
+  await indicator.waitFor({ state: 'detached' });
+  let release;
+  const confirmation = new Promise(resolve => { release = resolve; });
+  t.after(() => release());
+  await page.route('**/api/sync/ops', async route => {
+    await confirmation;
+    await route.fulfill({ json: { results: route.request().postDataJSON().ops.map(() => ({ status: 'applied', version: 1 })) } });
+  });
+  await page.locator('.scene-write-box').fill('walks toward the camera');
+  await page.getByRole('button', { name: 'Saving…', exact: true }).waitFor();
+  assert.equal(await page.locator('.field-saved-badge').count(), 0, 'no timer-based server confirmation');
+  assert.equal(await page.getByText('Saved', { exact: true }).count(), 0);
+  release();
+  await page.getByRole('button', { name: 'Saved', exact: true }).waitFor();
+  await indicator.waitFor({ state: 'detached' });
+  // Mount a fresh instance against the same saved sync state: it must not replay Saved.
+  await page.evaluate(async () => {
+    const React = await import('/node_modules/.vite/deps/react.js');
+    const ReactDOM = await import('/node_modules/.vite/deps/react-dom_client.js');
+    const { default: SyncStatus } = await import('/src/components/auth/SyncStatus.tsx');
+    const host = document.createElement('div');
+    host.id = 'remounted-status';
+    document.body.append(host);
+    (ReactDOM.createRoot ?? ReactDOM.default.createRoot)(host).render((React.createElement ?? React.default.createElement)(SyncStatus));
+  });
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator('#remounted-status').innerText(), '');
+  await page.evaluate(async () => (await import('/src/lib/sync.ts')).reconcile({ force: true }));
+  assert.equal(await indicator.count(), 0, 'idle background sync remains silent');
+
+  // A rejected save remains visible rather than claiming Saved.
+  await page.route('**/api/sync/ops', route => route.fulfill({ status: 500, json: { error: 'Save unavailable' } }));
+  await page.locator('.scene-write-box').fill('pauses by the window');
+  await page.getByRole('button', { name: /Sync failed/ }).first().waitFor();
+  assert.equal(await page.getByText('Saved', { exact: true }).count(), 0);
+  await page.context().setOffline(true);
+  await page.locator('.scene-write-box').fill('looks outside');
+  await page.getByRole('button', { name: /Offline/ }).first().waitFor();
+  assert.equal(await page.getByText('Saved', { exact: true }).count(), 0);
+  assert.deepEqual(errors, []);
+});
 
 test('extension panel keeps the selector and options within a narrow viewport in both themes', async t => {
   const { page, errors } = await openEpisodePage(t);

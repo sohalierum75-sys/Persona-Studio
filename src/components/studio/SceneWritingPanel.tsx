@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Pencil, Check, Image, Video, Link2, Unlink2,
+  Pencil, Image, Video, Link2, Unlink2,
   Shirt, MapPin, Camera, Settings2, Plus, X,
   AlertTriangle, ChevronDown, ChevronUp,
 } from "lucide-react";
@@ -42,11 +42,9 @@ export default function SceneWritingPanel({
   const [showCustomize,setShowCustomize]= useState(false);
   const [activeChip,   setActiveChip]   = useState<null|"outfit"|"location"|"camera">(null);
   const [outfitMode,   setOutfitMode]   = useState<"saved"|"custom">(scene.outfitId ? "saved" : "custom");
-  const [justSaved,    setJustSaved]    = useState(false);
   const [showNewOpts,  setShowNewOpts]  = useState(false);
 
   const titleRef = useRef<HTMLInputElement>(null);
-  const saveTimer= useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Sync title draft when scene changes
   useEffect(() => { setTitleDraft(scene.title); }, [scene.id, scene.title]);
@@ -70,14 +68,7 @@ export default function SceneWritingPanel({
   const activeOutfit  = charOutfits.find(o => o.id === scene.outfitId);
   const activeLocation= allLocations.find(l => l.id === scene.locationId);
 
-  function triggerSave() {
-    clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      setJustSaved(true);
-      setTimeout(() => setJustSaved(false), 1600);
-    }, 500);
-  }
-  function update(u: Partial<Scene>) { onUpdate(u); triggerSave(); }
+  function update(u: Partial<Scene>) { onUpdate(u); }
 
   function commitTitle() {
     if (titleDraft.trim()) update({ title: titleDraft.trim() });
@@ -137,9 +128,6 @@ export default function SceneWritingPanel({
           </button>
         )}
         <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
-          {justSaved && (
-            <span className="field-saved-badge"><Check size={10} /> Saved</span>
-          )}
           <button className={`status-pill status-${scene.status}`} onClick={cycleStatus} title="Click to cycle status" style={{ cursor:"pointer", border:"none" }}>
             {scene.status}
           </button>
