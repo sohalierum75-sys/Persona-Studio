@@ -119,8 +119,11 @@ if [ ! -f "$CADDYFILE" ]; then
 fi
 
 # Validate before replacing running services. Caddy owns certificates; do not
-# run Certbot or delete the persistent caddy_data volume.
-$COMPOSE run --rm --no-deps caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+# run Certbot or delete the persistent caddy_data volume. -T and </dev/null
+# are required: this script is piped to `bash -s` over stdin, and an attached
+# `compose run` would drain the rest of the script into the container.
+$COMPOSE run --rm --no-deps -T caddy caddy validate \
+  --config /etc/caddy/Caddyfile --adapter caddyfile </dev/null
 
 $COMPOSE pull api
 $COMPOSE up -d --remove-orphans

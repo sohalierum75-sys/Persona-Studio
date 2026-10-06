@@ -28,6 +28,10 @@ one. This was confirmed live on 2026-10-06: deploy run 21 succeeded yet the
 origin kept emitting the old catch-all 308 for WWW. `deploy.sh` now compares
 the md5 of the file on disk against the copy visible inside the running
 container and force-recreates caddy when they diverge, then reloads.
+One more deploy-script pitfall, also confirmed by run 21/22 logs: deploy.sh
+is piped to `bash -s` over stdin, so every command inside must detach stdin
+(`-T`, `</dev/null`) — an attached `compose run` drains the remaining script
+bytes and bash exits 0 after running only the commands above it.
 Existing API routing, headers, database volumes, and app settings stay
 unchanged.
 
