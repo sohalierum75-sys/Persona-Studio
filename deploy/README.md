@@ -20,8 +20,15 @@ from the repository. Misconfigured edge redirect rules can also cause loops.
 
 The deployment workflow already copies the Caddyfile, but `compose up -d`
 does not reload an unchanged container when only its bind-mounted file changes.
-`deploy.sh` now validates before deployment and explicitly reloads Caddy after
-startup. Existing API routing, headers, database volumes, and app settings stay
+Worse, the workflow replaces the file on disk (`tar`/`scp` substitute the
+file), and a single-file bind mount keeps serving the inode the container was
+created with — so a `caddy reload` inside the container can silently re-apply
+the OLD config while `caddy validate` (a fresh container) passes on the new
+one. This was confirmed live on 2026-10-06: deploy run 21 succeeded yet the
+origin kept emitting the old catch-all 308 for WWW. `deploy.sh` now compares
+the md5 of the file on disk against the copy visible inside the running
+container and force-recreates caddy when they diverge, then reloads.
+Existing API routing, headers, database volumes, and app settings stay
 unchanged.
 
 ## Apply this update

@@ -125,6 +125,18 @@ $COMPOSE run --rm --no-deps caddy caddy validate --config /etc/caddy/Caddyfile -
 $COMPOSE pull api
 $COMPOSE up -d --remove-orphans
 
+# A bind mount of a single file pins the inode it was created with. This
+# deploy replaces the Caddyfile on disk (tar/scp substitute the file), so the
+# running container can still see the previous copy — validate passes against
+# the new file while a reload inside the container re-applies the old one.
+# Recreate caddy whenever the file on disk and inside the container diverge.
+HOST_HASH=$(md5sum "$CADDYFILE" | cut -d' ' -f1)
+CT_HASH=$($COMPOSE exec -T caddy md5sum /etc/caddy/Caddyfile 2>/dev/null | cut -d' ' -f1 || true)
+if [ "$HOST_HASH" != "$CT_HASH" ]; then
+  echo "Caddyfile on disk differs from the running container — recreating caddy"
+  $COMPOSE up -d --force-recreate --no-deps caddy
+fi
+
 # A bind-mounted Caddyfile change does not cause Compose to recreate Caddy.
 # Reload explicitly so hostnames/redirects apply on every deployment.
 $COMPOSE exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
