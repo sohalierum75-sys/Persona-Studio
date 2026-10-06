@@ -7,7 +7,7 @@ import {
 import Brand from "../components/ui/Brand";
 import PricingSection from "../components/home/PricingSection";
 import { CharacterPortrait, OutfitGlyph, SceneVignette, type VignetteId } from "../components/home/graphics";
-import { ENGINES, formatEnginePrompt, type EngineId } from "../utils/promptFormatter";
+import { PRIMARY_GENERATORS, formatGeneratorPrompt, type GeneratorId } from "../utils/generators";
 import type { Location, Outfit, Scene } from "../types";
 import "./HomePage.css";
 
@@ -49,7 +49,7 @@ function sampleScene(index: number): Scene {
   };
 }
 
-const heroPrompt = formatEnginePrompt("midjourney", {
+const heroPrompt = formatGeneratorPrompt("midjourney", {
   scene: sampleScene(0), character: SAMPLE_CHARACTER, outfit: OUTFITS[0], location: LOCATIONS[0],
 });
 
@@ -71,7 +71,7 @@ const FAQ = [
 
 export default function HomePage() {
   const [sceneIndex, setSceneIndex] = useState(0);
-  const [engine, setEngine] = useState<EngineId>("midjourney");
+  const [generator, setGenerator] = useState<GeneratorId>("midjourney");
   const [copied, setCopied] = useState("");
   const [downloadUrl, setDownloadUrl] = useState<string>(EXTENSION_FALLBACK_URL);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -88,7 +88,7 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
-  const prompt = formatEnginePrompt(engine, {
+  const prompt = formatGeneratorPrompt(generator, {
     scene: sampleScene(sceneIndex), character: SAMPLE_CHARACTER,
     outfit: OUTFITS[sceneIndex], location: LOCATIONS[sceneIndex],
   });
@@ -224,7 +224,7 @@ export default function HomePage() {
             <h3>Copy the prompt</h3>
             <p>Character, outfit, location, and camera angle become a ready prompt for your engine. Copy and paste it anywhere.</p>
             <div className="hp-step-art hp-art-prompt" aria-hidden="true">
-              <div className="hp-art-engines"><span className="is-on">Midjourney</span><span>Stable Diffusion</span><span>Flux</span></div>
+              <div className="hp-art-engines"><span className="is-on">Midjourney</span><span>Stable Diffusion</span><span>Flux</span><span>+ 14 more</span></div>
               <p>{heroPrompt}</p>
               <div className="hp-art-copy"><Copy size={11} /> Copy prompt</div>
             </div>
@@ -246,9 +246,9 @@ export default function HomePage() {
               <h3><Film size={15} /> Ready Prompt</h3>
               <span className="hp-live"><span /> Interactive</span>
             </div>
-            <div className="hp-engine-tabs" role="group" aria-label="Prompt engine">
-              {ENGINES.map(e =>
-                <button key={e.id} aria-pressed={engine === e.id} onClick={() => { setEngine(e.id); setCopied(""); }}>{e.label}</button>,
+            <div className="hp-engine-tabs" role="group" aria-label="Prompt generator">
+              {PRIMARY_GENERATORS.map(e =>
+                <button key={e.id} aria-pressed={generator === e.id} onClick={() => { setGenerator(e.id); setCopied(""); }}>{e.label}</button>,
               )}
             </div>
             <div className="hp-scene-tabs" role="group" aria-label="Sample scene">

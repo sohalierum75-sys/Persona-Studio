@@ -1232,6 +1232,11 @@ img.topbar-logo-icon {
   opacity: 0.7;
 }
 
+/* Generator tab strip: horizontal scroll fallback on narrow panels,
+   without a visible scrollbar. */
+.gen-tabs-scroll::-webkit-scrollbar { display: none; }
+
+
 /* --------------------------------------------------------
    Bulk Scene Builder (BulkSceneBuilder.tsx)
    -------------------------------------------------------- */

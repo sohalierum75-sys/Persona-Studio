@@ -9,7 +9,7 @@
     "package:extension": "npm run build && node scripts/package-extension.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --import tsx --test tests/storage.test.ts tests/plan-limits.test.ts",
+    "test": "node --import tsx --test tests/storage.test.ts tests/plan-limits.test.ts tests/prompt-engine.test.ts",
     "test:extension": "npm run build && node --test tests/extension-background.test.mjs tests/extension-overlay.test.mjs",
     "test:auth": "node --test tests/auth-flow.test.mjs",
     "test:integration": "npm --prefix server test"

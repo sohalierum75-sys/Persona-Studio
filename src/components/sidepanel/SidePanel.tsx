@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { ExternalLink, Copy, Check, User, ChevronRight, AlertTriangle } from "lucide-react";
+import { ExternalLink, Copy, Check, User, ChevronRight, AlertTriangle, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { useStudio } from "../../store";
-import { formatEnginePrompt, readSavedEngine } from "../../utils/promptFormatter";
+import { formatGeneratorPrompt } from "../../utils/generators";
+import { useGeneratorSelection } from "../../hooks/useGeneratorSelection";
+import GeneratorTabs from "../studio/GeneratorTabs";
+import GeneratorOptions from "../studio/GeneratorOptions";
 import type { Scene } from "../../types";
 import AuthGate from "../auth/AuthGate";
 import SyncStatus from "../auth/SyncStatus";
@@ -47,6 +50,8 @@ function SidePanelInner() {
   } = useStudio();
 
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [genOptsOpen, setGenOptsOpen] = useState(false);
+  const { generatorId, generator, options: generatorOpts, selectGenerator, updateOptions } = useGeneratorSelection();
 
   useEffect(() => { loadAll(); }, []);
 
@@ -89,13 +94,15 @@ function SidePanelInner() {
     }
   }
 
-  // Engine-formatted prompt — same formatter and remembered engine as the studio prompt tab.
+  // Generator-formatted prompt — the same unified selector, persisted options
+  // and adapter system as the studio prompt tab.
   function getPrompt() {
     if (!activeScene || !activeCharacter) return "";
-    return formatEnginePrompt(readSavedEngine(), {
+    return formatGeneratorPrompt(generatorId, {
       scene: activeScene, character: activeCharacter,
       outfit: activeOutfit, location: activeLocation,
-    });
+      fieldConfigs: settings.sceneFieldConfigs,
+    }, generatorOpts);
   }
 
   async function copyPrompt() {
@@ -288,11 +295,31 @@ function SidePanelInner() {
             {/* Prompt preview (condensed) */}
             {activeScene && (
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
-                  Prompt preview
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", flex: 1 }}>
+                    Prompt preview
+                  </span>
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize: 10, padding: "3px 6px" }}
+                    title="Generator options"
+                    aria-label="Toggle generator options"
+                    onClick={() => setGenOptsOpen(v => !v)}>
+                    <Settings2 size={12} /> {genOptsOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                  </button>
                 </div>
+
+                {/* Unified Target Generator selector — same registry as the studio */}
+                <GeneratorTabs value={generatorId} onChange={selectGenerator} compact />
+
+                {genOptsOpen && (
+                  <div style={{ margin: "8px 0", padding: "10px 12px",
+                    background: "var(--bg-elevated)", border: "1px dashed var(--border)",
+                    borderRadius: "var(--radius-sm)" }}>
+                    <GeneratorOptions generator={generator} options={generatorOpts} onChange={updateOptions} />
+                  </div>
+                )}
+
                 {/* Character chip — thumbnail + name above the prompt box */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, marginBottom: 8 }}>
                   {portraitAsset ? (
                     <img src={portraitAsset.dataUrl} alt={`${activeCharacter?.name ?? "Character"} reference`}
                       style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border)" }}/>

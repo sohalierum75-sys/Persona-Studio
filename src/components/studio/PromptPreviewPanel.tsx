@@ -8,9 +8,11 @@ import { v4 as uuid } from "uuid";
 import type { Scene, Character, Outfit, Location, FieldConfig, Prompt } from "../../types";
 import { computeSceneHash } from "../../utils/continuity";
 import {
-  formatEnginePrompt, ENGINES, readSavedEngine, saveEngine,
-  type EngineId, type EngineOptions,
-} from "../../utils/promptFormatter";
+  formatGeneratorPrompt,
+} from "../../utils/generators";
+import { useGeneratorSelection } from "../../hooks/useGeneratorSelection";
+import GeneratorTabs from "./GeneratorTabs";
+import GeneratorOptions from "./GeneratorOptions";
 
 interface Props {
   scene: Scene;
@@ -101,20 +103,16 @@ export default function PromptPreviewPanel({
   const [labelEditId, setLabelEditId]= useState<string|null>(null);
   const [labelDraft, setLabelDraft]  = useState("");
 
-  // ── Engine switcher state ──
-  const [engine, setEngine]         = useState<EngineId>(readSavedEngine);
-  const [optsOpen, setOptsOpen]     = useState(false);
-  const [engineOpts, setEngineOpts] = useState<EngineOptions>({});
+  // ── Target Generator selector state ──
+  // One unified selector for every generator; each generator keeps its own
+  // persisted options, so switching back and forth restores them.
+  const { generatorId, generator, options: generatorOpts, selectGenerator, updateOptions } = useGeneratorSelection();
+  const [optsOpen, setOptsOpen]   = useState(false);
 
-  function selectEngine(id: EngineId) {
-    setEngine(id);
-    saveEngine(id);
-  }
-
-  // Formatted output for the selected engine — derived only; scene fields untouched.
+  // Formatted output for the selected generator — derived only; scene fields untouched.
   const currentPrompt = useMemo(
-    () => formatEnginePrompt(engine, { scene, character, outfit, location, fieldConfigs }, engineOpts),
-    [engine, scene, character, outfit, location, fieldConfigs, engineOpts],
+    () => formatGeneratorPrompt(generatorId, { scene, character, outfit, location, fieldConfigs }, generatorOpts),
+    [generatorId, generatorOpts, scene, character, outfit, location, fieldConfigs],
   );
 
   const prompts = (scene.prompts ?? []).slice().reverse(); // newest first
@@ -214,112 +212,21 @@ export default function PromptPreviewPanel({
 
       {/* ── Live preview box ───────────────────────────────────────────── */}
       <div style={{ padding:"14px 16px", borderBottom:"1px solid var(--divider)", flexShrink:0 }}>
-        {/* Engine switcher */}
+        {/* Target Generator selector — primary tabs + "More ▾" dropdown */}
         <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
-          <div style={{ flex:1, display:"flex", gap:3, background:"var(--bg-input)", border:"1px solid var(--border)", borderRadius:"var(--radius-sm)", padding:3 }}>
-            {ENGINES.map((e) => (
-              <button key={e.id} type="button" title={`Format prompt for ${e.label}`}
-                onClick={() => selectEngine(e.id)}
-                style={{ flex:1, fontSize:10, fontWeight:700, padding:"4px 0", border:"none", cursor:"pointer",
-                  borderRadius:"calc(var(--radius-sm) - 2px)", letterSpacing:"0.02em",
-                  background: engine===e.id ? "var(--accent)" : "transparent",
-                  color: engine===e.id ? "#fff" : "var(--text-muted)",
-                  transition:"background 120ms ease, color 120ms ease" }}>
-                {e.label}
-              </button>
-            ))}
-          </div>
-          <button className="btn btn-ghost btn-sm" style={{ fontSize:10, padding:"4px 7px" }}
-            title="Engine options (model, reference, LoRA)"
+          <GeneratorTabs value={generatorId} onChange={selectGenerator}/>
+          <button className="btn btn-ghost btn-sm" style={{ fontSize:10, padding:"4px 7px", flexShrink:0 }}
+            title="Generator options"
             onClick={() => setOptsOpen(v=>!v)}>
             <Settings2 size={12}/> {optsOpen ? <ChevronUp size={11}/> : <ChevronDown size={11}/>}
           </button>
         </div>
 
-        {/* Engine options — compact expandable section */}
+        {/* Generator options — one dynamic panel driven by the registry */}
         {optsOpen && (
-          <div style={{ display:"flex", flexDirection:"column", gap:8, padding:"10px 12px", marginBottom:10,
+          <div style={{ padding:"10px 12px", marginBottom:10,
             background:"var(--bg-elevated)", border:"1px dashed var(--border)", borderRadius:"var(--radius-sm)" }}>
-            <div style={{ fontSize:10, fontWeight:700, color:"var(--text-muted)", letterSpacing:"0.06em", textTransform:"uppercase" }}>
-              {ENGINES.find((e)=>e.id===engine)?.label} options
-            </div>
-            {engine==="midjourney" && (
-              <>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"var(--text-secondary)" }}>
-                  <span style={{ minWidth:96 }}>Model version</span>
-                  <select className="input" style={{ flex:1, height:26, fontSize:11, padding:"0 6px" }}
-                    value={engineOpts.mjModelVersion ?? "v7"}
-                    onChange={(e)=>setEngineOpts(o=>({...o, mjModelVersion:e.target.value}))}>
-                    <option value="v5.2">v5.2</option>
-                    <option value="v6">v6</option>
-                    <option value="v6.1">v6.1</option>
-                    <option value="v7">v7</option>
-                  </select>
-                </label>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"var(--text-secondary)" }}>
-                  <span style={{ minWidth:96 }}>Aspect ratio</span>
-                  <select className="input" style={{ flex:1, height:26, fontSize:11, padding:"0 6px" }}
-                    value={engineOpts.aspectRatio ?? ""}
-                    onChange={(e)=>setEngineOpts(o=>({...o, aspectRatio:e.target.value || undefined}))}>
-                    <option value="">Default</option>
-                    <option value="1:1">1:1</option>
-                    <option value="16:9">16:9</option>
-                    <option value="9:16">9:16</option>
-                    <option value="4:3">4:3</option>
-                    <option value="3:4">3:4</option>
-                    <option value="3:2">3:2</option>
-                    <option value="2:3">2:3</option>
-                    <option value="21:9">21:9</option>
-                  </select>
-                </label>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"var(--text-secondary)" }}>
-                  <span style={{ minWidth:96 }}>Char. ref URL</span>
-                  <input className="input" style={{ flex:1, height:26, fontSize:11, padding:"0 6px" }}
-                    placeholder="https://… (--cref)" value={engineOpts.mjCharacterRefUrl ?? ""}
-                    onChange={(e)=>setEngineOpts(o=>({...o, mjCharacterRefUrl:e.target.value}))}/>
-                </label>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"var(--text-secondary)" }}>
-                  <span style={{ minWidth:96 }}>Ref weight (--cw)</span>
-                  <input type="number" min={0} max={100} className="input" style={{ flex:1, height:26, fontSize:11, padding:"0 6px" }}
-                    placeholder="100" value={engineOpts.mjCharacterRefWeight ?? ""}
-                    onChange={(e)=>setEngineOpts(o=>({...o, mjCharacterRefWeight:e.target.value===""?undefined:+e.target.value}))}/>
-                </label>
-                <div style={{ fontSize:10, color:"var(--text-muted)" }}>
-                  --cref/--cw only apply on v6+ and only when a reference URL is set.
-                </div>
-              </>
-            )}
-            {engine==="stable-diffusion" && (
-              <>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"var(--text-secondary)" }}>
-                  <span style={{ minWidth:96 }}>Negative prompt</span>
-                  <textarea className="textarea" rows={2} style={{ flex:1, fontSize:11, padding:"4px 6px" }}
-                    placeholder="Optional — e.g. blurry, extra limbs"
-                    value={engineOpts.sdNegativePrompt ?? ""}
-                    onChange={(e)=>setEngineOpts(o=>({...o, sdNegativePrompt:e.target.value}))}/>
-                </label>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"var(--text-secondary)" }}>
-                  <span style={{ minWidth:96 }}>LoRA name</span>
-                  <input className="input" style={{ flex:1, height:26, fontSize:11, padding:"0 6px" }}
-                    placeholder="e.g. my-style-lora" value={engineOpts.sdLoraName ?? ""}
-                    onChange={(e)=>setEngineOpts(o=>({...o, sdLoraName:e.target.value}))}/>
-                </label>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"var(--text-secondary)" }}>
-                  <span style={{ minWidth:96 }}>LoRA weight</span>
-                  <input type="number" step={0.1} min={-2} max={2} className="input" style={{ flex:1, height:26, fontSize:11, padding:"0 6px" }}
-                    placeholder="0.8" value={engineOpts.sdLoraWeight ?? ""}
-                    onChange={(e)=>setEngineOpts(o=>({...o, sdLoraWeight:e.target.value===""?undefined:+e.target.value}))}/>
-                </label>
-                <div style={{ fontSize:10, color:"var(--text-muted)" }}>
-                  &lt;lora:name:weight&gt; is added only when both a name and a weight are provided.
-                </div>
-              </>
-            )}
-            {engine==="flux" && (
-              <div style={{ fontSize:11, color:"var(--text-muted)" }}>
-                Flux output is a plain natural-language description — no parameters or LoRA tags.
-              </div>
-            )}
+            <GeneratorOptions generator={generator} options={generatorOpts} onChange={updateOptions}/>
           </div>
         )}
 
