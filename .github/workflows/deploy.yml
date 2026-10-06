@@ -90,4 +90,10 @@ jobs:
           # deploy directory (/opt/persona-studio) — other VPS services untouched.
           tar -C deploy -cf - compose.production.yaml Caddyfile deploy.sh \
             | $SSH "mkdir -p /opt/persona-studio/deploy && tar -C /opt/persona-studio/deploy -xf -"
-          $SSH "IMAGE=${IMAGE} IMAGE_TAG=${IMAGE_TAG} bash -s" < deploy/deploy.sh
+          # Write the script to a file before running it. Piping it into
+          # `bash -s` makes every stdin-attached command inside (compose
+          # run/exec) swallow the remaining script bytes as its own stdin,
+          # so bash exits 0 halfway through with no error (seen in runs 21-22).
+          $SSH "cat > /opt/persona-studio/.deploy.sh \
+            && IMAGE=${IMAGE} IMAGE_TAG=${IMAGE_TAG} bash /opt/persona-studio/.deploy.sh" \
+            < deploy/deploy.sh
