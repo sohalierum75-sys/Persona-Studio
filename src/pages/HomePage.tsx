@@ -404,6 +404,10 @@ export default function HomePage() {
       <button className="hp-text-button" onClick={() => setShowFaq(!showFaq)} aria-expanded={showFaq}>Questions &amp; answers</button>
       <button className="hp-text-button" onClick={() => scrollTo("pricing")}>Pricing</button>
       <button className="hp-text-button" onClick={() => scrollTo("extension")}>Chrome extension</button>
+      <Link to="/privacy-policy">Privacy Policy</Link>
+      <Link to="/terms">Terms &amp; Conditions</Link>
+      <Link to="/refund-policy">Refund Policy</Link>
+      <a href="mailto:support@personastudio.site">support@personastudio.site</a>
       <Link to="/characters">Open Studio <ArrowRight size={13} /></Link>
     </footer>
   </div>;

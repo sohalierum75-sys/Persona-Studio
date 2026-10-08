@@ -1,7 +1,7 @@
 /**
  * Pricing — lifetime deal (first 50, server-enforced) and monthly plan.
  *
- * Buttons connect to real Lemon Squeezy checkouts through the API
+ * Buttons connect to real Paddle checkouts through the API
  * (POST /api/billing/checkout requires sign-in, so the purchase can be
  * attributed). No countdowns, no decorative urgency: the claimed counter
  * is the server's real number, and unavailability is stated as such.
@@ -104,7 +104,7 @@ export default function PricingSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn]);
 
-  // Post-payment confirmation (?checkout=success from Lemon Squeezy).
+  // Post-payment confirmation (?checkout=success from Paddle).
   useEffect(() => {
     if (params.get("checkout") !== "success") return;
     if (!signedIn) { setConfirmation("signed-out"); return; }
@@ -200,6 +200,11 @@ export default function PricingSection() {
     </div>
 
     {notice && <p className="hp-pricing-notice" role="alert">{notice}</p>}
-    <p className="hp-pricing-fineprint">Checkout and payments are handled by Lemon Squeezy. Prices in USD.</p>
+    <p className="hp-pricing-fineprint">
+      Checkout and payments are handled by{" "}
+      <a href="https://www.paddle.com" target="_blank" rel="noopener noreferrer">Paddle</a>
+      {" "}&mdash; Merchant of Record. Prices in USD.{" "}
+      <a href="/terms">Terms</a> &middot; <a href="/refund-policy">Refund Policy</a> &middot; <a href="/privacy-policy">Privacy</a>
+    </p>
   </section>;
 }

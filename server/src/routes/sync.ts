@@ -7,7 +7,7 @@ import { type AuthedRequest } from "../lib/sessions.js";
 import { broadcastChange } from "../lib/events.js";
 import { sha256 } from "../lib/tokens.js";
 import { operationSchema, recordKinds, validateImage } from "../lib/images.js";
-import { hasActiveSubscription } from "../lib/lemonsqueezy.js";
+import { hasActiveSubscription } from "../lib/paddle.js";
 import { freeLimits, getUsage, promptCount } from "../lib/plans.js";
 
 export const syncRouter = Router();

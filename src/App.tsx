@@ -15,6 +15,9 @@ import HistoryPage from "./pages/HistoryPage";
 import SettingsPage from "./pages/SettingsPage";
 import AuthGate, { LoadingScreen, SignInScreen } from "./components/auth/AuthGate";
 import HomePage from "./pages/HomePage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsPage from "./pages/TermsPage";
+import RefundPolicyPage from "./pages/RefundPolicyPage";
 
 // ─── Studio layout wrapper (layout route shared by all studio pages) ──────────
 
@@ -61,7 +64,7 @@ function StudioRoot() {
 function RootRoute() {
   const auth = useAuth();
   // ?checkout=… keeps a signed-in user on the homepage: it is set when a
-  // pricing checkout starts and by Lemon Squeezy's post-payment redirect.
+  // pricing checkout starts and by Paddle's post-payment redirect.
   // ?pricing=1 lets signed-in Free users view optional upgrades.
   const [params] = useSearchParams();
   const inCheckout = params.has("checkout") || params.has("pricing");
@@ -112,6 +115,11 @@ export default function App() {
     <Routes>
       {/* Public homepage (unauthenticated) */}
       <Route path="/" element={<RootRoute />} />
+
+      {/* Legal pages — always public, no auth gate */}
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms"          element={<TermsPage />} />
+      <Route path="/refund-policy"  element={<RefundPolicyPage />} />
 
       {/* Studio — single layout route; AuthGate lives inside StudioRoot */}
       <Route element={<StudioRoot />}>

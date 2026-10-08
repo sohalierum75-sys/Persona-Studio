@@ -1,0 +1,107 @@
+/* ── LegalPage — shared styles for Privacy, Terms, and Refund pages ──────── */
+
+.lp-root {
+  min-height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.lp-header {
+  position: sticky; top: 0; z-index: 50;
+  min-height: 60px; padding: 12px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: color-mix(in srgb, var(--bg-base) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--divider);
+}
+
+.lp-logo { color: inherit; text-decoration: none; flex-shrink: 0; }
+
+.lp-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-muted); text-decoration: none;
+  transition: color 0.15s;
+}
+.lp-back:hover { color: var(--text-primary); }
+
+/* ── Main prose ─────────────────────────────────────────────────────────── */
+.lp-main { flex: 1; padding: 48px 24px 80px; }
+
+.lp-prose {
+  max-width: 720px; margin: 0 auto;
+}
+
+.lp-date {
+  font-size: 12px; color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.lp-prose h1 {
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 700; letter-spacing: -0.04em;
+  margin: 0 0 36px;
+  border-bottom: 1px solid var(--divider);
+  padding-bottom: 20px;
+}
+
+.lp-prose h2 {
+  font-size: 17px; font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 36px 0 8px;
+}
+
+.lp-prose p, .lp-prose li {
+  font-size: 14.5px; line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.lp-prose ul, .lp-prose ol {
+  padding-left: 22px; margin: 8px 0 16px;
+}
+
+.lp-prose li { margin: 6px 0; }
+
+.lp-prose a {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.lp-prose a:hover { color: var(--accent); }
+
+.lp-prose strong { font-weight: 600; color: var(--text-primary); }
+
+.lp-info-box {
+  background: var(--bg-card);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+.lp-info-box p { font-size: inherit; margin: 0; color: inherit; }
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.lp-footer {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 18px;
+  padding: 28px 24px; font-size: 12px; color: var(--text-muted);
+  border-top: 1px solid var(--divider);
+}
+.lp-footer a {
+  color: inherit; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.lp-footer a:hover { color: var(--text-primary); }
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .lp-header { padding: 12px 16px; }
+  .lp-main { padding: 32px 16px 60px; }
+  .lp-prose h1 { margin-bottom: 24px; padding-bottom: 14px; }
+  .lp-footer { gap: 14px; padding: 24px 16px; }
+}

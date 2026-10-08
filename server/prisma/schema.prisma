@@ -30,14 +30,14 @@ model User {
   authCodes     AuthCode[]
   entities      Entity[]
 
-  // ── Billing (granted only by verified Lemon Squeezy webhooks) ──
+  // ── Billing (granted only by verified Paddle webhooks) ──
   /// Set when a verified webhook grants the one-time (lifetime) purchase
   lifetimeAt          DateTime?
-  /// Latest Lemon Squeezy subscription state: active | on_trial | cancelled | expired | past_due | paused
+  /// Latest Paddle subscription state: active | trialing | canceled | past_due | paused
   subscriptionStatus  String?
-  /// End of the current paid period — access continues until this date after cancel
+  /// End of the current paid billing period — access continues until this date after cancel
   subscriptionEndsAt  DateTime?
-  /// Lemon Squeezy subscription id (unique per user)
+  /// Paddle subscription id (unique per user)
   subscriptionId      String?   @unique
   purchases           Purchase[]
 }
@@ -117,31 +117,36 @@ model EntityVersion {
   @@index([userId, entityId])
 }
 
-/// One row per paid Lemon Squeezy order or subscription. Written only by
-/// verified webhooks; doubles as the ledger the lifetime-deal limit counts.
+/// One row per paid order or subscription. Written only by verified webhooks;
+/// doubles as the ledger the lifetime-deal limit counts against.
+/// `provider` = "paddle" for new records; "lemonsqueezy" for historic LS records.
 model Purchase {
-  id               String   @id @default(uuid())
-  provider         String   @default("lemonsqueezy")
+  id                     String   @id @default(uuid())
+  provider               String   @default("paddle")
   /// lifetime | monthly
-  kind             String
-  /// granted | limit_reached | refunded
-  status           String
-  userId           String?
-  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  email            String
-  lsOrderId        String?  @unique
-  lsSubscriptionId String?  @unique
-  lsVariantId      String
-  amountCents      Int
-  currency         String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  kind                   String
+  /// granted | limit_reached | refunded | unmatched
+  status                 String
+  userId                 String?
+  user                   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email                  String
+  /// Provider order/transaction id (Paddle: txn_xxx; legacy LS: order id)
+  providerOrderId        String?  @unique
+  /// Provider subscription id (Paddle: sub_xxx; legacy LS: sub id)
+  providerSubscriptionId String?  @unique
+  /// Provider price id (Paddle: pri_xxx; legacy LS: variant id)
+  providerPriceId        String
+  amountCents            Int
+  currency               String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   @@index([kind, status])
   @@index([userId])
 }
 
 /// Every verified webhook event, keyed for idempotency (retries are ignored).
+/// For Paddle, `id` = event_id from the notification payload.
 model BillingEvent {
   id        String   @id
   eventName String

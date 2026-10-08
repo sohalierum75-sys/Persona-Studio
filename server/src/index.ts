@@ -37,7 +37,7 @@ export function createApp(): express.Express {
 
   app.use((_req, res, next) => { res.setHeader("Cache-Control", "no-store"); res.setHeader("X-Content-Type-Options", "nosniff"); res.setHeader("Referrer-Policy", "no-referrer"); next(); });
 
-  // Lemon Squeezy webhook — mounted BEFORE the JSON parser: signature
+  // Paddle webhook — mounted BEFORE the JSON parser: signature
   // verification needs the raw request bytes, and this router terminates
   // the request so the global parser never touches it.
   app.use("/api/billing/webhook", express.raw({ type: "*/*", limit: "256kb" }), billingWebhookRouter);

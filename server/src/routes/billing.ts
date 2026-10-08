@@ -1,7 +1,7 @@
 // ============================================================
 // Billing routes — public plan availability, authenticated
-// checkout creation, entitlements, and the Lemon Squeezy
-// webhook (mounted with a raw-body parser for HMAC verification).
+// checkout creation, entitlements, and the Paddle webhook
+// (mounted with a raw-body parser for HMAC verification).
 // ============================================================
 import { Router, Request, Response } from "express";
 import { config, billingConfigured, billingMissingVariables } from "../config.js";
@@ -10,8 +10,8 @@ import { prisma } from "../lib/prisma.js";
 import {
   verifyWebhookSignature, processWebhook, createCheckout,
   lifetimeClaims, lifetimeRemaining, getEntitlements, hasActiveSubscription,
-  type LsWebhookBody,
-} from "../lib/lemonsqueezy.js";
+  type PaddleWebhookBody,
+} from "../lib/paddle.js";
 
 export const billingRouter = Router();
 export const billingWebhookRouter = Router();
@@ -25,9 +25,9 @@ billingRouter.get("/config", async (_req, res) => {
     configured,
     missingVariables: billingMissingVariables(),
     lifetime: {
-      limit: config.lemonsqueezy.lifetimeDealLimit,
+      limit: config.paddle.lifetimeDealLimit,
       claimed,
-      remaining: claimed === null ? null : Math.max(0, config.lemonsqueezy.lifetimeDealLimit - claimed),
+      remaining: claimed === null ? null : Math.max(0, config.paddle.lifetimeDealLimit - claimed),
     },
   });
 });
@@ -89,21 +89,25 @@ billingRouter.post("/checkout", requireAuth, async (req, res) => {
   }
 });
 
-// ─── POST /api/billing/webhook — Lemon Squeezy → server ──────────────────────
+// ─── POST /api/billing/webhook — Paddle → server ─────────────────────────────
 // Mounted BEFORE express.json with express.raw: the HMAC is computed over the
-// exact bytes Lemon Squeezy sent. Invalid signatures get 401; processing
-// failures get 500 so Lemon Squeezy retries (idempotency makes that safe).
+// exact bytes Paddle sent. Invalid signatures get 401; processing failures get
+// 500 so Paddle retries (idempotency makes that safe).
+//
+// Paddle sends the signature in the `Paddle-Signature` header.
+// Format: ts=<epoch_secs>;h1=<hmac_sha256_hex>
+// HMAC input: "<ts>:<raw_body_utf8>"
 
 billingWebhookRouter.post("/", (req: Request, res: Response) => {
   const raw = req.body as Buffer;
-  if (!Buffer.isBuffer(raw) || !verifyWebhookSignature(raw, req.header("X-Signature"))) {
+  if (!Buffer.isBuffer(raw) || !verifyWebhookSignature(raw, req.header("Paddle-Signature"))) {
     res.status(401).json({ error: "Invalid webhook signature" });
     return;
   }
 
-  let body: LsWebhookBody;
+  let body: PaddleWebhookBody;
   try {
-    body = JSON.parse(raw.toString("utf8")) as LsWebhookBody;
+    body = JSON.parse(raw.toString("utf8")) as PaddleWebhookBody;
   } catch {
     res.status(400).json({ error: "Invalid JSON body" });
     return;

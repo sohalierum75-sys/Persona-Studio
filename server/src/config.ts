@@ -93,34 +93,40 @@ export const config = {
   tombstoneDays: parseInt(optional("TOMBSTONE_DAYS", "30"), 10),
 
   /**
-   * Lemon Squeezy billing. Billing is enabled only when ALL of api key, store id,
-   * webhook secret and both variant ids are set; otherwise the pricing
-   * endpoints degrade gracefully (config → configured:false, checkout → 503).
+   * Paddle Billing. Billing is enabled only when apiKey, webhookSecret,
+   * and both price ids are set; otherwise the pricing endpoints degrade
+   * gracefully (config → configured:false, checkout → 503).
    * Secrets never leave the server: the client only receives checkout URLs.
    */
-  lemonsqueezy: {
-    storeId: process.env.LEMONSQUEEZY_STORE_ID ?? "",
-    apiKey: process.env.LEMONSQUEEZY_API_KEY ?? "",
-    webhookSecret: process.env.LEMONSQUEEZY_WEBHOOK_SECRET ?? "",
-    lifetimeVariantId: process.env.LEMONSQUEEZY_LIFETIME_VARIANT_ID ?? "",
-    monthlyVariantId: process.env.LEMONSQUEEZY_MONTHLY_VARIANT_ID ?? "",
+  paddle: {
+    /** "sandbox" | "production" — controls which Paddle API base URL is used */
+    environment: (process.env.PADDLE_ENVIRONMENT ?? "sandbox") as "sandbox" | "production",
+    apiKey: process.env.PADDLE_API_KEY ?? "",
+    webhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? "",
+    /** Paddle Price ID for the one-time lifetime deal (pri_xxx) */
+    lifetimePriceId: process.env.PADDLE_LIFETIME_PRICE_ID ?? "",
+    /** Paddle Price ID for the monthly subscription (pri_xxx) */
+    monthlyPriceId: process.env.PADDLE_MONTHLY_PRICE_ID ?? "",
     /** Max lifetime deals that can ever be granted (server-enforced) */
     lifetimeDealLimit: parseInt(optional("LIFETIME_DEAL_LIMIT", "50"), 10),
-    /** Where Lemon Squeezy sends the buyer after payment (defaults to PUBLIC_BASE_URL) */
-    redirectUrl: optional("LEMONSQUEEZY_REDIRECT_URL", ""),
-    apiBaseUrl: "https://api.lemonsqueezy.com/v1",
+    /** Where Paddle sends the buyer after payment (defaults to PUBLIC_BASE_URL) */
+    redirectUrl: optional("PADDLE_REDIRECT_URL", ""),
+    get apiBaseUrl(): string {
+      return this.environment === "production"
+        ? "https://api.paddle.com"
+        : "https://sandbox-api.paddle.com";
+    },
   },
 };
 
 /** Only environment variable names are safe to return to the browser. */
 export function billingMissingVariables(): string[] {
-  const ls = config.lemonsqueezy;
+  const p = config.paddle;
   return Object.entries({
-    LEMONSQUEEZY_API_KEY: ls.apiKey,
-    LEMONSQUEEZY_STORE_ID: ls.storeId,
-    LEMONSQUEEZY_WEBHOOK_SECRET: ls.webhookSecret,
-    LEMONSQUEEZY_LIFETIME_VARIANT_ID: ls.lifetimeVariantId,
-    LEMONSQUEEZY_MONTHLY_VARIANT_ID: ls.monthlyVariantId,
+    PADDLE_API_KEY: p.apiKey,
+    PADDLE_WEBHOOK_SECRET: p.webhookSecret,
+    PADDLE_LIFETIME_PRICE_ID: p.lifetimePriceId,
+    PADDLE_MONTHLY_PRICE_ID: p.monthlyPriceId,
   }).filter(([, value]) => !value.trim() || /YOUR_|CHANGE_ME|REPLACE_WITH/.test(value))
     .map(([name]) => name);
 }
@@ -142,24 +148,24 @@ export function validateConfig(): string[] {
   if (config.google.clientId && config.allowedOrigins.length === 0 && config.extensionRedirectPrefixes.length === 0) {
     problems.push("Set ALLOWED_ORIGINS and/or EXTENSION_REDIRECT_PREFIXES so OAuth callbacks can be validated");
   }
-  // Checkout stays disabled until billing setup is complete.
-  const ls = config.lemonsqueezy;
-  const missing = billingMissingVariables();
-  // Missing billing setup is reported by the billing endpoints; keep the free app available.
-  if (!missing.includes("LEMONSQUEEZY_STORE_ID") && !/^\d+$/.test(ls.storeId)) {
-    problems.push("LEMONSQUEEZY_STORE_ID must be the numeric Lemon Squeezy store id");
+
+  const p = config.paddle;
+  const env = p.environment;
+  if (env !== "sandbox" && env !== "production") {
+    problems.push("PADDLE_ENVIRONMENT must be 'sandbox' or 'production'");
   }
-  if (!Number.isFinite(ls.lifetimeDealLimit) || ls.lifetimeDealLimit < 1) {
+  if (!Number.isFinite(p.lifetimeDealLimit) || p.lifetimeDealLimit < 1) {
     problems.push("LIFETIME_DEAL_LIMIT must be a positive integer");
   }
-  if (!missing.includes("LEMONSQUEEZY_WEBHOOK_SECRET") && ls.webhookSecret.length < 16) {
-    problems.push("LEMONSQUEEZY_WEBHOOK_SECRET should be a long random string (16+ characters)");
+  const missing = billingMissingVariables();
+  if (!missing.includes("PADDLE_WEBHOOK_SECRET") && p.webhookSecret.length < 16) {
+    problems.push("PADDLE_WEBHOOK_SECRET should be a long random string (16+ characters)");
   }
-  if (!missing.includes("LEMONSQUEEZY_LIFETIME_VARIANT_ID") && !/^\d+$/.test(ls.lifetimeVariantId)) {
-    problems.push("LEMONSQUEEZY_LIFETIME_VARIANT_ID must be the numeric Lemon Squeezy variant id");
+  if (!missing.includes("PADDLE_LIFETIME_PRICE_ID") && !/^pri_/.test(p.lifetimePriceId)) {
+    problems.push("PADDLE_LIFETIME_PRICE_ID must be a Paddle price ID starting with pri_");
   }
-  if (!missing.includes("LEMONSQUEEZY_MONTHLY_VARIANT_ID") && !/^\d+$/.test(ls.monthlyVariantId)) {
-    problems.push("LEMONSQUEEZY_MONTHLY_VARIANT_ID must be the numeric Lemon Squeezy variant id");
+  if (!missing.includes("PADDLE_MONTHLY_PRICE_ID") && !/^pri_/.test(p.monthlyPriceId)) {
+    problems.push("PADDLE_MONTHLY_PRICE_ID must be a Paddle price ID starting with pri_");
   }
   return problems;
 }

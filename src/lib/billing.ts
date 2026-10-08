@@ -2,7 +2,7 @@
  * Billing client — plan availability, entitlements and checkout.
  *
  * The server owns everything sensitive: the client only ever receives
- * a hosted Lemon Squeezy checkout URL from an authenticated call, and
+ * a hosted Paddle checkout URL from an authenticated call, and
  * paid access is granted server-side after webhook verification.
  */
 
@@ -45,7 +45,7 @@ export async function fetchBillingPlans(): Promise<BillingPlansInfo | null> {
   }
 }
 
-/** Start checkout for a signed-in user; resolves to the Lemon Squeezy URL. */
+/** Start checkout for a signed-in user; resolves to the Paddle checkout URL. */
 export function startCheckout(plan: BillingPlan): Promise<{ url: string }> {
   return apiFetch<{ url: string }>("/api/billing/checkout", { method: "POST", body: { plan } });
 }
