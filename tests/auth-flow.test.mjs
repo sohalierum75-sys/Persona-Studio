@@ -139,12 +139,12 @@ for (const plan of ['lifetime', 'monthly']) {
     await page.route('**/api/billing/checkout', route => {
       assert.equal(route.request().headers().authorization, 'Bearer test-access');
       assert.deepEqual(route.request().postDataJSON(), { plan });
-      return route.fulfill({ json: { url: `https://checkout.lemonsqueezy.com/buy/${plan}` } });
+      return route.fulfill({ json: { url: `https://sandbox-checkout.paddle.com/checkout/${plan}` } });
     });
-    await page.route('https://checkout.lemonsqueezy.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
+    await page.route('https://sandbox-checkout.paddle.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
     await page.goto(origin + '/?pricing=1');
     await page.locator(`#pricing-${plan}-cta`).click();
-    await page.waitForURL(`https://checkout.lemonsqueezy.com/buy/${plan}`);
+    await page.waitForURL(`https://sandbox-checkout.paddle.com/checkout/${plan}`);
   });
 }
 
@@ -152,10 +152,10 @@ test('checkout setup error is visible without claiming payment', async t => {
   const { page } = await pageFor(t);
   await page.goto(origin);
   await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
-  await page.route('**/api/billing/checkout', route => route.fulfill({ status: 503, json: { error: 'Checkout setup incomplete. Set these server environment variables: LEMONSQUEEZY_STORE_ID.' } }));
+  await page.route('**/api/billing/checkout', route => route.fulfill({ status: 503, json: { error: 'Checkout setup incomplete. Set these server environment variables: PADDLE_API_KEY.' } }));
   await page.goto(origin + '/?pricing=1');
   await page.locator('#pricing-lifetime-cta').click();
-  await page.getByRole('alert').filter({ hasText: 'LEMONSQUEEZY_STORE_ID' }).waitFor();
+  await page.getByRole('alert').filter({ hasText: 'PADDLE_API_KEY' }).waitFor();
   assert.equal(new URL(page.url()).origin, origin);
   await page.goto(origin + '/?checkout=success');
   await page.getByText('Checking your access. Payment confirmation may take a few seconds.').waitFor();
@@ -175,11 +175,11 @@ test('purchase survives Google sign-in and resumes selected plan', async t => {
   await page.waitForURL('**/api/auth/google/start?**');
   await page.route('**/api/billing/checkout', route => {
     assert.deepEqual(route.request().postDataJSON(), { plan: 'lifetime' });
-    return route.fulfill({ json: { url: 'https://checkout.lemonsqueezy.com/buy/resumed' } });
+    return route.fulfill({ json: { url: 'https://sandbox-checkout.paddle.com/checkout/resumed' } });
   });
-  await page.route('https://checkout.lemonsqueezy.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
+  await page.route('https://sandbox-checkout.paddle.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
   await page.goto(origin + '/?checkout=lifetime&code=test-code');
-  await page.waitForURL('https://checkout.lemonsqueezy.com/buy/resumed');
+  await page.waitForURL('https://sandbox-checkout.paddle.com/checkout/resumed');
 });
 
 test('account shows identity, usage, sync and actions; Escape restores focus', async t => {

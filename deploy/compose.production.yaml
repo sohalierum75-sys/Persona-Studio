@@ -1,7 +1,7 @@
 # Complete production deployment, run on the VPS from /opt/persona-studio.
 # Secrets live in /opt/persona-studio/.env (POSTGRES_PASSWORD, JWT_SECRET,
 # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, EXTENSION_REDIRECT_PREFIXES,
-# ALLOWED_ORIGINS, PUBLIC_BASE_URL, and the LEMONSQUEEZY_* billing keys —
+# ALLOWED_ORIGINS, PUBLIC_BASE_URL, and the PADDLE_* billing keys —
 # see server/.env.example). The api image is built by the
 # Build & Deploy workflow and pushed to GHCR tagged with the commit SHA.
 services:
