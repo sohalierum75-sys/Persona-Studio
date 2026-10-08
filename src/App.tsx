@@ -18,6 +18,7 @@ import HomePage from "./pages/HomePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsPage from "./pages/TermsPage";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
+import PricingPage from "./pages/PricingPage";
 
 // ─── Studio layout wrapper (layout route shared by all studio pages) ──────────
 
@@ -116,7 +117,8 @@ export default function App() {
       {/* Public homepage (unauthenticated) */}
       <Route path="/" element={<RootRoute />} />
 
-      {/* Legal pages — always public, no auth gate */}
+      {/* Public pages — no auth gate */}
+      <Route path="/pricing"        element={<PricingPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route path="/terms"          element={<TermsPage />} />
       <Route path="/refund-policy"  element={<RefundPolicyPage />} />

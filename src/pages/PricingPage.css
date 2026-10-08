@@ -1,0 +1,21 @@
+/* ── PricingPage — overrides / additions on top of LegalPage shell ────────── */
+
+/*
+ * The pricing section uses hp-section / hp-pricing CSS classes from
+ * HomePage.css. Import that file here so the cards render correctly when
+ * the page is visited stand-alone (without the full HP shell in the tree).
+ */
+@import "./HomePage.css";
+
+/* Give the main area the same background and a modest vertical padding so
+   the section head has breathing room at the top. */
+.pp-main {
+  flex: 1;
+  padding: 0 0 48px;
+}
+
+/* On the dedicated page the section already has its own max-width centring,
+   so remove the extra horizontal padding that LegalPage normally applies. */
+.pp-root .hp-section {
+  padding-top: 56px;
+}

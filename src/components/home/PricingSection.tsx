@@ -74,15 +74,17 @@ export default function PricingSection() {
     if (!signedIn) {
       // Checkout must know who is buying — sign in first, then resume.
       try { sessionStorage.setItem(INTENT_KEY, plan); } catch { /* storage unavailable */ }
-      void signInWithGoogle({ returnUrl: `${window.location.origin}/?checkout=${plan}` });
+      const returnPath = window.location.pathname;
+      void signInWithGoogle({ returnUrl: `${window.location.origin}${returnPath}?checkout=${plan}` });
       return;
     }
     setBusy(plan);
     try {
       const { url } = await startCheckout(plan);
       // Keep the checkout marker in the URL so returning to this tab stays
-      // on the homepage instead of bouncing to the Studio mid-redirect.
-      navigate(`/?checkout=${plan}`, { replace: true });
+      // on the same page instead of bouncing to the Studio mid-redirect.
+      const currentPath = window.location.pathname;
+      navigate(`${currentPath}?checkout=${plan}`, { replace: true });
       window.location.assign(url);
     } catch (err) {
       setBusy(null);
@@ -98,7 +100,8 @@ export default function PricingSection() {
     let intent: string | null = null;
     try { intent = sessionStorage.getItem(INTENT_KEY); sessionStorage.removeItem(INTENT_KEY); } catch { /* */ }
     if (intent === "lifetime" || intent === "monthly") {
-      navigate(`/?checkout=${intent}`, { replace: true });
+      const currentPath = window.location.pathname;
+      navigate(`${currentPath}?checkout=${intent}`, { replace: true });
       void buy(intent);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

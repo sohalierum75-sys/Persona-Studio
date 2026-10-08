@@ -11,12 +11,13 @@
 }
 .hp-logo { color: inherit; text-decoration: none; flex-shrink: 0; }
 .hp-nav { display: flex; gap: 20px; align-items: center; }
-.hp-nav button, .hp-text-button {
+.hp-nav button, .hp-nav-pricing, .hp-text-button {
   border: 0; background: none; padding: 0; color: var(--text-secondary);
   cursor: pointer; font: inherit; font-size: 13px;
   display: inline-flex; align-items: center; gap: 5px;
+  text-decoration: none;
 }
-.hp-nav button:hover, .hp-text-button:hover { color: var(--text-primary); }
+.hp-nav button:hover, .hp-nav-pricing:hover, .hp-text-button:hover { color: var(--text-primary); }
 .hp-header-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 .hp-header .hp-menu { display: none; }
 .hp-mobile-nav { display: flex; flex-wrap: wrap; justify-content: center; padding: 12px; gap: 8px; border-bottom: 1px solid var(--border); background: var(--bg-base); }

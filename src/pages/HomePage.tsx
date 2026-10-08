@@ -59,7 +59,6 @@ const EXTENSION_FALLBACK_URL = "/download/persona-studio-extension-v1.1.0.zip";
 const NAV_LINKS = [
   { label: "How it works", target: "workflow" },
   { label: "Features", target: "features" },
-  { label: "Pricing", target: "pricing" },
   { label: "Extension", target: "extension" },
 ];
 const FAQ = [
@@ -109,6 +108,7 @@ export default function HomePage() {
       <Link to="/" className="hp-logo" aria-label="Persona Studio home"><Brand /></Link>
       <nav className="hp-nav" aria-label="Page navigation">
         {NAV_LINKS.map(l => <button key={l.target} onClick={() => scrollTo(l.target)}>{l.label}</button>)}
+        <Link to="/pricing" className="hp-nav-pricing">Pricing</Link>
       </nav>
       <div className="hp-header-actions">
         <a href={downloadUrl} download className="btn btn-ghost" id="header-download-extension"><Download size={14} /> Download extension</a>
@@ -119,6 +119,7 @@ export default function HomePage() {
     </header>
     {menuOpen && <nav className="hp-mobile-nav" aria-label="Mobile navigation">
       {NAV_LINKS.map(l => <button className="btn btn-ghost" key={l.target} onClick={() => scrollTo(l.target)}>{l.label}</button>)}
+      <Link className="btn btn-ghost" to="/pricing">Pricing</Link>
       <Link className="btn btn-primary" to="/characters">Open Studio</Link>
     </nav>}
 
@@ -402,7 +403,7 @@ export default function HomePage() {
     <footer className="hp-footer">
       <span>© {new Date().getFullYear()} Persona Studio</span>
       <button className="hp-text-button" onClick={() => setShowFaq(!showFaq)} aria-expanded={showFaq}>Questions &amp; answers</button>
-      <button className="hp-text-button" onClick={() => scrollTo("pricing")}>Pricing</button>
+      <Link className="hp-text-button" to="/pricing">Pricing</Link>
       <button className="hp-text-button" onClick={() => scrollTo("extension")}>Chrome extension</button>
       <Link to="/privacy-policy">Privacy Policy</Link>
       <Link to="/terms">Terms &amp; Conditions</Link>
