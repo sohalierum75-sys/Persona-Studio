@@ -28,8 +28,16 @@ function googleCallbackUrl(req: Request): string {
 export function validateClientRedirect(raw: string): string | null {
   try {
     const url = new URL(raw);
-    if (url.username || url.password || url.hash || url.search) return null;
-    if (config.extensionRedirectPrefixes.some(p => new URL(p).href === url.href)) return url.href;
+    if (url.username || url.password || url.hash) return null;
+    if (!url.search && config.extensionRedirectPrefixes.some(p => new URL(p).href === url.href)) return url.href;
+    // Only application-owned checkout markers may survive OAuth. Never accept
+    // injected codes/errors, duplicate markers or an arbitrary redirect target.
+    for (const [key, value] of url.searchParams) {
+      if (url.searchParams.getAll(key).length !== 1) return null;
+      if (key === "checkout" && ["lifetime", "monthly", "success"].includes(value)) continue;
+      if (key === "pricing" && value === "1") continue;
+      return null;
+    }
     // Any path on an allowed origin is safe (same-origin, no open redirect) —
     // sign-in can start from any frontend route (/characters, /settings, …).
     if (config.allowedOrigins.includes(url.origin)) return url.href;

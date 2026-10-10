@@ -59,6 +59,7 @@ jobs:
           push: true
           build-args: |
             VITE_API_URL=${{ vars.PUBLIC_BASE_URL }}
+            APP_REVISION=${{ github.sha }}
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
@@ -97,3 +98,9 @@ jobs:
           $SSH "cat > /opt/persona-studio/.deploy.sh \
             && IMAGE=${IMAGE} IMAGE_TAG=${IMAGE_TAG} bash /opt/persona-studio/.deploy.sh" \
             < deploy/deploy.sh
+
+      - name: Verify public deployment and checkout OAuth
+        env:
+          PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+          EXPECTED_REVISION: ${{ github.sha }}
+        run: node scripts/verify-production.mjs

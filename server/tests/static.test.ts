@@ -69,7 +69,14 @@ test("web OAuth redirect accepts any path on an allowed origin", async () => {
   assert.equal(validateClientRedirect("http://localhost:5173/"), "http://localhost:5173/");
   assert.equal(validateClientRedirect("http://localhost:5173/characters"), "http://localhost:5173/characters");
   assert.equal(validateClientRedirect("http://localhost:5173/characters/abc"), "http://localhost:5173/characters/abc");
-  // Query/hash rejected so OAuth result params stay the only ones appended.
+  for (const plan of ["lifetime", "monthly", "success"]) {
+    const redirect = `http://localhost:5173/pricing?checkout=${plan}&pricing=1`;
+    assert.equal(validateClientRedirect(redirect), redirect);
+  }
+  for (const query of ["checkout=wrong", "checkout=monthly&checkout=lifetime", "checkout=monthly&code=injected", "auth_error=cancelled", "redirect=https://evil.example", "pricing=2"]) {
+    assert.equal(validateClientRedirect(`http://localhost:5173/?${query}`), null);
+  }
+  // Unknown query values and fragments remain rejected.
   assert.equal(validateClientRedirect("http://localhost:5173/characters?x=1"), null);
   assert.equal(validateClientRedirect("http://localhost:5173/settings#y"), null);
   // Cross-origin paths stay rejected; extension prefixes still work.

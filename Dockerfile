@@ -19,6 +19,9 @@ COPY server/src ./src
 RUN npm run generate && npm run build
 
 FROM node:22-bookworm-slim
+ARG APP_REVISION=unknown
+ENV APP_REVISION=$APP_REVISION
+LABEL org.opencontainers.image.revision=$APP_REVISION
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/server
 COPY --from=build /app/server ./

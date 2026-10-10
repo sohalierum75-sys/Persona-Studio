@@ -128,6 +128,15 @@ $COMPOSE run --rm --no-deps -T caddy caddy validate \
 $COMPOSE pull api
 $COMPOSE up -d --remove-orphans
 
+# Confirm the image running behind this Compose service, not just a healthy
+# older process. Print only public build metadata, never environment values.
+RUNNING_ID=$($COMPOSE ps -q api)
+RUNNING_REVISION=$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$RUNNING_ID")
+if [ "$RUNNING_REVISION" != "$IMAGE_TAG" ]; then
+  echo "✗ API image revision $RUNNING_REVISION does not match requested $IMAGE_TAG" >&2
+  exit 1
+fi
+
 # A bind mount of a single file pins the inode it was created with. This
 # deploy replaces the Caddyfile on disk (tar/scp substitute the file), so the
 # running container can still see the previous copy — validate passes against

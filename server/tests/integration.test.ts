@@ -61,6 +61,10 @@ test("Google web and extension callbacks share one identity; PKCE and single use
     const state=new URL(start.headers.get("location")!).searchParams.get("state");
     const callback=await nativeFetch(`${base}/api/auth/google/callback?code=provider-code&state=${state}`,{redirect:"manual",headers:{cookie:start.headers.get("set-cookie")!.split(";")[0]}});
     assert.equal(callback.status,302);
+    const returned = new URL(callback.headers.get("location")!);
+    const selected = new URL(redirect).searchParams.get("checkout");
+    assert.equal(returned.searchParams.get("checkout"), selected);
+    assert.equal(returned.pathname, new URL(redirect).pathname);
     const code=new URL(callback.headers.get("location")!).searchParams.get("code");
     assert.ok(code);
     assert.equal((await request("/api/auth/token",undefined,{code,verifier:"x".repeat(43)})).status,401);
@@ -71,6 +75,12 @@ test("Google web and extension callbacks share one identity; PKCE and single use
   }
   const web=await login("http://localhost:5173/");
   const extension=await login(process.env.EXTENSION_REDIRECT_PREFIXES!);
+  for (const plan of ["lifetime", "monthly"]) {
+    for (const path of ["/", "/pricing"]) {
+      const checkout = await login(`http://localhost:5173${path}?checkout=${plan}`);
+      assert.equal(checkout.user.id, web.user.id);
+    }
+  }
   assert.equal(web.user.id,extension.user.id);
   assert.equal(web.user.name,"Google User");
   assert.equal((await request("/api/auth/google/start?redirect=https://evil.example/&challenge="+"a".repeat(43))).status,400);

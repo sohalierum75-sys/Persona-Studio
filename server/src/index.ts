@@ -46,7 +46,7 @@ export function createApp(): express.Express {
 
   // ── Health ──────────────────────────────────────────────────────────
   app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, service: "persona-studio-api", time: new Date().toISOString() });
+    res.json({ ok: true, service: "persona-studio-api", revision: process.env.APP_REVISION ?? "unknown", time: new Date().toISOString() });
   });
 
   // ── Routes ──────────────────────────────────────────────────────────
