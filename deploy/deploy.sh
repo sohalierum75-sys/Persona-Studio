@@ -151,7 +151,20 @@ fi
 
 # A bind-mounted Caddyfile change does not cause Compose to recreate Caddy.
 # Reload explicitly so hostnames/redirects apply on every deployment.
-$COMPOSE exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+# A newly recreated container may be running before its admin listener is ready.
+CADDY_READY=false
+for i in $(seq 1 15); do
+  if $COMPOSE exec -T caddy caddy reload --address 127.0.0.1:2019 --config /etc/caddy/Caddyfile --adapter caddyfile; then
+    CADDY_READY=true
+    break
+  fi
+  sleep 2
+done
+if [ "$CADDY_READY" != true ]; then
+  echo "✗ Caddy admin endpoint did not become ready" >&2
+  $COMPOSE logs --tail 30 caddy >&2
+  exit 1
+fi
 
 # Health check: the API must report healthy within ~60s
 for i in $(seq 1 30); do
