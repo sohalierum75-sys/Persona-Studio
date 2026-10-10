@@ -1,0 +1,78 @@
+[
+  {
+    "plan": "lifetime",
+    "requests": [
+      {
+        "path": "/api/billing/config",
+        "status": 200
+      },
+      {
+        "path": "/api/billing/config",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/google/start",
+        "status": 302
+      }
+    ],
+    "errors": [
+      "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920' violates the following Content Security Policy directive: \"script-src 'self' https://cdn.paddle.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+    ],
+    "assets": [
+      "/assets/rolldown-runtime-W7wSyTde.js",
+      "/assets/components-DopVK7-D.js",
+      "/assets/main-DSI3YtN4.js"
+    ],
+    "headers": {
+      "modified": "Sat, 10 Oct 2026 19:03:20 GMT",
+      "csp": "default-src 'self'; script-src 'self' https://cdn.paddle.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.paddle.com https://*.paddle.io; frame-src https://*.paddle.com https://*.paddle.io; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    },
+    "planVisible": true,
+    "oauthStart": {
+      "redirect": "https://personastudio.site/pricing?checkout=lifetime",
+      "pkce": true
+    },
+    "finalPage": "https://accounts.google.com/v3/signin/identifier",
+    "alerts": [],
+    "pendingPlan": null,
+    "bodyExcerpt": "Sign in with Google\nSign in\n\nto continue to personastudio.site\n\nEmail or phone\n\nForgot email?\n\nNext\nCreate account\nAfrikaans\nazərbaycan\nbosanski\ncatalà\nČeština\nCymraeg\nDansk\nDeutsch\neesti\nEnglish (United Kingdom)\nEnglish (United States)\nEspañol (España)\nEspañol (Latinoamérica)\neuskara\nFilipino\nFrançais (Canada)\nFrançais (France)\nGaeilge\ngalego\nHrvatski\nIndonesia\nisiZulu\níslenska\nItaliano\nKiswahili\nlatviešu\nlietuvių\nmagyar\nMelayu\nNederlands\nnorsk\no‘zbek\npolski\nPortuguês (Brasil)\nPortuguês (Portugal)\nromână\nshqip\nSlovenčina\nslovenščina\nsrpski (latinica)\nSuomi\nSvenska\nTiếng Việt\nTürkçe\nΕλληνικά\nбеларуская\nбългарски\nкыргызча\nқазақ тілі\nмакедонски\nмонгол\nРусский\nсрпски (ћирилица)\nУкраїнська\nქართული\nհայերեն\n‫עברית‬‎\n‫اردو‬‎\n‫العربية‬‎\n‫فارسی‬‎\nአማርኛ\nनेपाली\nमराठी\nहिन्दी\nঅসমীয়া\nবাংলা\nਪੰਜਾਬੀ\nગુજરાત"
+  },
+  {
+    "plan": "monthly",
+    "requests": [
+      {
+        "path": "/api/billing/config",
+        "status": 200
+      },
+      {
+        "path": "/api/billing/config",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/google/start",
+        "status": 302
+      }
+    ],
+    "errors": [
+      "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920' violates the following Content Security Policy directive: \"script-src 'self' https://cdn.paddle.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+    ],
+    "assets": [
+      "/assets/rolldown-runtime-W7wSyTde.js",
+      "/assets/main-DSI3YtN4.js",
+      "/assets/components-DopVK7-D.js"
+    ],
+    "headers": {
+      "modified": "Sat, 10 Oct 2026 19:03:20 GMT",
+      "csp": "default-src 'self'; script-src 'self' https://cdn.paddle.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.paddle.com https://*.paddle.io; frame-src https://*.paddle.com https://*.paddle.io; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    },
+    "planVisible": true,
+    "oauthStart": {
+      "redirect": "https://personastudio.site/pricing?checkout=monthly",
+      "pkce": true
+    },
+    "finalPage": "https://accounts.google.com/v3/signin/identifier",
+    "alerts": [],
+    "pendingPlan": null,
+    "bodyExcerpt": "Sign in with Google\nSign in\n\nto continue to personastudio.site\n\nEmail or phone\n\nForgot email?\n\nNext\nCreate account\nAfrikaans\nazərbaycan\nbosanski\ncatalà\nČeština\nCymraeg\nDansk\nDeutsch\neesti\nEnglish (United Kingdom)\nEnglish (United States)\nEspañol (España)\nEspañol (Latinoamérica)\neuskara\nFilipino\nFrançais (Canada)\nFrançais (France)\nGaeilge\ngalego\nHrvatski\nIndonesia\nisiZulu\níslenska\nItaliano\nKiswahili\nlatviešu\nlietuvių\nmagyar\nMelayu\nNederlands\nnorsk\no‘zbek\npolski\nPortuguês (Brasil)\nPortuguês (Portugal)\nromână\nshqip\nSlovenčina\nslovenščina\nsrpski (latinica)\nSuomi\nSvenska\nTiếng Việt\nTürkçe\nΕλληνικά\nбеларуская\nбългарски\nкыргызча\nқазақ тілі\nмакедонски\nмонгол\nРусский\nсрпски (ћирилица)\nУкраїнська\nქართული\nհայերեն\n‫עברית‬‎\n‫اردو‬‎\n‫العربية‬‎\n‫فارسی‬‎\nአማርኛ\nनेपाली\nमराठी\nहिन्दी\nঅসমীয়া\nবাংলা\nਪੰਜਾਬੀ\nગુજરાત"
+  }
+]
