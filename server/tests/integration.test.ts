@@ -221,6 +221,9 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     await page.getByRole("button",{name:"New Character",exact:true}).first().click();
     await page.getByLabel("Character name *").fill("Browser Mira");
     await page.getByRole("button",{name:"Create Character",exact:true}).click();
+    // The async quota check completes before the first sync state transition.
+    // Waiting only for "synced" can observe the previous idle state.
+    await page.waitForFunction(async()=>{const {useStudio}=await import("/src/store/index.ts");return useStudio.getState().characters.some((c:any)=>c.name==="Browser Mira");});
     await page.waitForFunction(async()=>{const {getSyncState}=await import("/src/lib/sync.ts");return getSyncState().status==="synced";});
     const c=await page.evaluate(async()=>{const {useStudio}=await import("/src/store/index.ts");return useStudio.getState().characters.find((c:any)=>c.name==="Browser Mira");});
     assert.ok(c);
@@ -232,7 +235,7 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     await page.locator(".account-avatar-btn").click();
     await page.getByText("Free plan",{exact:true}).waitFor();
     await page.getByText("1 / 1 characters",{exact:true}).waitFor();
-    assert.match(await page.getByRole("link",{name:"Upgrade for unlimited access"}).getAttribute("href"),/pricing=1/);
+    assert.match(await page.getByRole("link",{name:"Upgrade to unlimited"}).getAttribute("href"),/pricing=1/);
     await page.locator(".account-avatar-btn").click();
     // The new account used Studio without a purchase; continue the multi-record
     // extension/migration regression on the paid tier.
