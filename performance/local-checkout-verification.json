@@ -7,7 +7,7 @@
       "workspaceRedirect": false,
       "intentConsumed": true,
       "sandboxOverlayOpened": false,
-      "stop": "timed out | url=http://127.0.0.1:3910/pricing?pricing=1 | alerts=[\"Checkout setup incomplete. Set these server environment variables: PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, PADDLE_LIFETIME_PRICE_ID, PADDLE_MONTHLY_PRICE_ID.\"] | body=Persona Studio Back to site PRICING Start free. Upgrade when you need more. Free includes 1 character, 1 episode, 10 saved prompts, and up to 3 scenes per bulk import. Monthly and lifetime plans include unlimited access to existing features. Use Free plan — no purchase required First 50 customers Li",
+      "stop": "timed out | url=http://127.0.0.1:3910/?pricing=1 | alerts=[\"Checkout setup incomplete. Set these server environment variables: PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, PADDLE_LIFETIME_PRICE_ID, PADDLE_MONTHLY_PRICE_ID.\"] | body=Skip to content Persona Studio How it works Features Extension Pricing Download extension Sign in Open Studio Your characters. A connected workflow. One character. Every scene. A little more continuity. Persona Studio keeps your cast, wardrobe, locations, and scene prompts in one workspace — so ever",
       "passed": true
     },
     {
@@ -17,7 +17,7 @@
       "workspaceRedirect": false,
       "intentConsumed": true,
       "sandboxOverlayOpened": false,
-      "stop": "timed out | url=http://127.0.0.1:3910/pricing?pricing=1 | alerts=[\"Checkout setup incomplete. Set these server environment variables: PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, PADDLE_LIFETIME_PRICE_ID, PADDLE_MONTHLY_PRICE_ID.\"] | body=Persona Studio Back to site PRICING Start free. Upgrade when you need more. Free includes 1 character, 1 episode, 10 saved prompts, and up to 3 scenes per bulk import. Monthly and lifetime plans include unlimited access to existing features. Use Free plan — no purchase required First 50 customers Li",
+      "stop": "timed out | url=http://127.0.0.1:3910/?pricing=1 | alerts=[\"Checkout setup incomplete. Set these server environment variables: PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, PADDLE_LIFETIME_PRICE_ID, PADDLE_MONTHLY_PRICE_ID.\"] | body=Skip to content Persona Studio How it works Features Extension Pricing Download extension Sign in Open Studio Your characters. A connected workflow. One character. Every scene. A little more continuity. Persona Studio keeps your cast, wardrobe, locations, and scene prompts in one workspace — so ever",
       "passed": true
     }
   ],
