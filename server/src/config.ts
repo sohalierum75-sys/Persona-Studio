@@ -96,12 +96,14 @@ export const config = {
    * Paddle Billing. Billing is enabled only when apiKey, webhookSecret,
    * and both price ids are set; otherwise the pricing endpoints degrade
    * gracefully (config → configured:false, checkout → 503).
-   * Secrets never leave the server: the client only receives checkout URLs.
+   * Secrets never leave the server; only the public client token is exposed.
    */
   paddle: {
     /** "sandbox" | "production" — controls which Paddle API base URL is used */
     environment: (process.env.PADDLE_ENVIRONMENT ?? "sandbox") as "sandbox" | "production",
     apiKey: process.env.PADDLE_API_KEY ?? "",
+    /** Public Paddle.js token; never expose the API key to the browser. */
+    clientToken: process.env.PADDLE_CLIENT_TOKEN ?? "",
     webhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? "",
     /** Paddle Price ID for the one-time lifetime deal (pri_xxx) */
     lifetimePriceId: process.env.PADDLE_LIFETIME_PRICE_ID ?? "",
@@ -109,7 +111,7 @@ export const config = {
     monthlyPriceId: process.env.PADDLE_MONTHLY_PRICE_ID ?? "",
     /** Max lifetime deals that can ever be granted (server-enforced) */
     lifetimeDealLimit: parseInt(optional("LIFETIME_DEAL_LIMIT", "50"), 10),
-    /** Where Paddle sends the buyer after payment (defaults to PUBLIC_BASE_URL) */
+    /** Web app base URL for payment links (defaults to PUBLIC_BASE_URL). */
     redirectUrl: optional("PADDLE_REDIRECT_URL", ""),
     get apiBaseUrl(): string {
       return this.environment === "production"

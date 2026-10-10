@@ -170,7 +170,11 @@ export async function signInWithGoogle(opts?: { returnUrl?: string }): Promise<v
 /** Web: top-level redirect through the API. The API redirects back with a code. */
 async function signInWeb(returnUrl?: string): Promise<void> {
   const challenge = await makeChallenge();
-  const target = returnUrl ?? window.location.origin + window.location.pathname;
+  const targetUrl = new URL(returnUrl ?? window.location.href);
+  targetUrl.searchParams.delete("code");
+  targetUrl.searchParams.delete("auth_error");
+  targetUrl.hash = "";
+  const target = targetUrl.href;
   window.location.href =
     `${API_URL}/api/auth/google/start?client=web&challenge=${challenge}&redirect=${encodeURIComponent(target)}`;
   // Navigation takes over from here

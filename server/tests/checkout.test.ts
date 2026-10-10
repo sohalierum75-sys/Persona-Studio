@@ -38,7 +38,7 @@ test("billing setup reports only exact missing variable names, including placeho
 });
 
 for (const [plan, priceId] of [["lifetime", "pri_test_lifetime_111"], ["monthly", "pri_test_monthly_222"]] as const) {
-  test(`${plan} checkout calls Paddle sandbox API with correct price, customer and custom_data`, async () => {
+  test(`${plan} checkout calls Paddle sandbox API with correct price and account attribution`, async () => {
     const saved = {
       apiKey: config.paddle.apiKey,
       webhookSecret: config.paddle.webhookSecret,
@@ -60,9 +60,11 @@ for (const [plan, priceId] of [["lifetime", "pri_test_lifetime_111"], ["monthly"
 
         const body = JSON.parse(init?.body as string);
         assert.deepEqual(body.items, [{ price_id: priceId, quantity: 1 }]);
-        assert.equal(body.customer.email, "buyer@example.test");
+        assert.equal(body.collection_mode, "automatic");
         assert.deepEqual(body.custom_data, { user_id: "buyer-id", plan });
-        assert.ok(body.settings.success_url.includes("/?checkout=success"), "success_url must include /?checkout=success");
+        assert.deepEqual(body.checkout, { url: "https://studio.example/pricing" });
+        assert.equal(body.customer, undefined);
+        assert.equal(body.settings, undefined);
 
         return Response.json({ data: { checkout: { url: "https://sandbox-checkout.paddle.com/checkout/test" } } });
       };

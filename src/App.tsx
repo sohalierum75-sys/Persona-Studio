@@ -19,6 +19,7 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsPage from "./pages/TermsPage";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
 import PricingPage from "./pages/PricingPage";
+import { pendingCheckoutPlan } from "./lib/billing";
 
 // ─── Studio layout wrapper (layout route shared by all studio pages) ──────────
 
@@ -68,7 +69,7 @@ function RootRoute() {
   // pricing checkout starts and by Paddle's post-payment redirect.
   // ?pricing=1 lets signed-in Free users view optional upgrades.
   const [params] = useSearchParams();
-  const inCheckout = params.has("checkout") || params.has("pricing");
+  const inCheckout = params.has("checkout") || params.has("_ptxn") || params.has("pricing") || pendingCheckoutPlan() !== null;
 
   // Extension context never needs the marketing homepage
   if (IS_EXTENSION) return <Navigate to="/characters" replace />;

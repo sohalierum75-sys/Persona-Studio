@@ -23,6 +23,8 @@ billingRouter.get("/config", async (_req, res) => {
   const claimed = configured ? await lifetimeClaims() : null;
   res.json({
     configured,
+    environment: config.paddle.environment,
+    clientToken: /^(test|live)_/.test(config.paddle.clientToken) ? config.paddle.clientToken : null,
     missingVariables: billingMissingVariables(),
     lifetime: {
       limit: config.paddle.lifetimeDealLimit,

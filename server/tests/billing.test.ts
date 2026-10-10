@@ -290,8 +290,8 @@ test("checkout creates a Paddle transaction with buyer bound in custom_data", as
   assert.equal(captured.body.items[0].price_id, "pri_test_monthly_222");
   assert.equal(captured.body.custom_data.user_id, s.user.id);
   assert.equal(captured.body.custom_data.plan, "monthly");
-  assert.equal(captured.body.customer.email, "sub@example.test");
-  assert.ok(captured.body.settings.success_url.includes("/?checkout=success"));
+  assert.equal(captured.body.collection_mode, "automatic");
+  assert.ok(captured.body.checkout.url.endsWith("/pricing"));
   assert.ok(String(captured.url).includes("sandbox-api.paddle.com"));
   assert.equal(new Headers(captured.headers).get("Authorization"), "Bearer test-paddle-api-key");
 

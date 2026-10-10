@@ -385,11 +385,9 @@ export async function createCheckout(params: {
 
   const requestBody = {
     items: [{ price_id: priceId, quantity: 1 }],
-    customer: { email: params.user.email },
+    collection_mode: "automatic",
     custom_data: { user_id: params.user.id, plan: params.plan },
-    settings: {
-      success_url: `${base}/?checkout=success`,
-    },
+    checkout: { url: `${base}/pricing` },
   };
 
   const response = await fetch(`${p.apiBaseUrl}/transactions`, {

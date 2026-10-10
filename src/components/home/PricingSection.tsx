@@ -7,16 +7,16 @@
  * is the server's real number, and unavailability is stated as such.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Check } from "lucide-react";
 import { useAuth, signInWithGoogle } from "../../lib/auth";
+import { openPaddleCheckout } from "../../lib/paddle-checkout";
 import {
   fetchBillingPlans, fetchEntitlements, startCheckout,
+  pendingCheckoutPlan, saveCheckoutPlan, requireCheckoutConfiguration,
   type BillingPlan, type BillingPlansInfo, type Entitlements,
 } from "../../lib/billing";
-
-const INTENT_KEY = "ps_billing_intent";
 
 const LIFETIME_FEATURES = [
   "Full Studio workspace — characters, wardrobe, locations, episodes",
@@ -47,11 +47,13 @@ export default function PricingSection() {
   const [busy, setBusy] = useState<BillingPlan | null>(null);
   const [notice, setNotice] = useState("");
   const [confirmation, setConfirmation] = useState<Confirmation>(null);
+  const checkoutInFlight = useRef(false);
 
   const signedIn = auth.status === "signed-in";
+  const purchaseDisabled = busy !== null || auth.status === "initialising" || auth.status === "signing-in";
   const lifetimeActive = ents?.lifetime.active === true;
   const subscriptionActive = ents?.subscription?.active === true;
-  const soldOut = plans?.lifetime.remaining === 0;
+  const soldOut = plans?.lifetime?.remaining === 0;
 
   useEffect(() => { void fetchBillingPlans().then(setPlans); }, []);
 
@@ -66,46 +68,68 @@ export default function PricingSection() {
   }
 
   async function buy(plan: BillingPlan) {
-    setNotice("");
-    if (plans?.missingVariables?.length) {
-      setNotice(`Checkout setup incomplete. Set these server environment variables: ${plans.missingVariables.join(", ")}.`);
-      return;
-    }
-    if (!signedIn) {
-      // Checkout must know who is buying — sign in first, then resume.
-      try { sessionStorage.setItem(INTENT_KEY, plan); } catch { /* storage unavailable */ }
-      const returnPath = window.location.pathname;
-      void signInWithGoogle({ returnUrl: `${window.location.origin}${returnPath}?checkout=${plan}` });
-      return;
-    }
+    if (checkoutInFlight.current || auth.status === "initialising" || auth.status === "signing-in") return;
+    checkoutInFlight.current = true;
     setBusy(plan);
+    setNotice("");
     try {
+      const config = await requireCheckoutConfiguration();
+      if (!signedIn) {
+        saveCheckoutPlan(plan);
+        const target = new URL(window.location.href);
+        target.searchParams.set("checkout", plan);
+        target.searchParams.delete("code");
+        target.searchParams.delete("auth_error");
+        target.hash = "";
+        await signInWithGoogle({ returnUrl: target.href });
+        return;
+      }
       const { url } = await startCheckout(plan);
-      // Keep the checkout marker in the URL so returning to this tab stays
-      // on the same page instead of bouncing to the Studio mid-redirect.
-      const currentPath = window.location.pathname;
-      navigate(`${currentPath}?checkout=${plan}`, { replace: true });
-      window.location.assign(url);
+      await openPaddleCheckout(url, config, auth.user?.email);
     } catch (err) {
-      setBusy(null);
       setNotice(err instanceof Error ? err.message : "Checkout could not be started.");
       refreshPlansAndEnts();
+    } finally {
+      checkoutInFlight.current = false;
+      setBusy(null);
     }
   }
 
-  // Resume checkout after the sign-in round-trip: turn the stored intent
-  // into the ?checkout= marker, then start the checkout.
+  // Resume only after session restoration, using either persisted intent source.
   useEffect(() => {
     if (!signedIn) return;
-    let intent: string | null = null;
-    try { intent = sessionStorage.getItem(INTENT_KEY); sessionStorage.removeItem(INTENT_KEY); } catch { /* */ }
-    if (intent === "lifetime" || intent === "monthly") {
-      const currentPath = window.location.pathname;
-      navigate(`${currentPath}?checkout=${intent}`, { replace: true });
+    const intent = pendingCheckoutPlan();
+    saveCheckoutPlan(null);
+    if (intent) {
+      // Consume before requesting: remounts, refreshes and Back must not create
+      // a second transaction. Keep the public page pinned, including on errors.
+      const target = new URL(window.location.href);
+      target.searchParams.delete("checkout");
+      target.searchParams.delete("code");
+      target.searchParams.delete("auth_error");
+      target.searchParams.set("pricing", "1");
+      window.history.replaceState(window.history.state, "", target.pathname + target.search + target.hash);
+      navigate(target.pathname + target.search + target.hash, { replace: true });
       void buy(intent);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn]);
+
+  // Paddle's payment links can also be opened directly (including from emails).
+  useEffect(() => {
+    if (!params.has("_ptxn")) return;
+    const target = new URL(window.location.href);
+    if (!target.searchParams.has("_ptxn")) return;
+    const paymentUrl = target.href;
+    saveCheckoutPlan(null);
+    target.searchParams.delete("_ptxn");
+    target.searchParams.set("pricing", "1");
+    window.history.replaceState(window.history.state, "", target.pathname + target.search);
+    navigate(target.pathname + target.search, { replace: true });
+    void requireCheckoutConfiguration()
+      .then(config => openPaddleCheckout(paymentUrl, config))
+      .catch(error => setNotice(error instanceof Error ? error.message : "Checkout could not be started."));
+  }, [params, navigate]);
 
   // Post-payment confirmation (?checkout=success from Paddle).
   useEffect(() => {
@@ -131,8 +155,8 @@ export default function PricingSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, signedIn]);
 
-  const claimed = plans?.lifetime.claimed ?? null;
-  const limit = plans?.lifetime.limit ?? 50;
+  const claimed = plans?.lifetime?.claimed ?? null;
+  const limit = plans?.lifetime?.limit ?? 50;
 
   return <section className="hp-section" id="pricing" aria-label="Pricing">
     <div className="hp-section-head">
@@ -174,7 +198,7 @@ export default function PricingSection() {
           ? <span className="hp-plan-active"><Check size={15} /> Lifetime access active</span>
           : soldOut
             ? <button className="btn btn-secondary hp-plan-cta" disabled>Sold out — monthly available</button>
-            : <button className="btn btn-primary hp-plan-cta" id="pricing-lifetime-cta" disabled={busy !== null} onClick={() => void buy("lifetime")}>
+            : <button className="btn btn-primary hp-plan-cta" id="pricing-lifetime-cta" disabled={purchaseDisabled} onClick={() => void buy("lifetime")}>
                 {busy === "lifetime" ? "Connecting to checkout…" : <>Get lifetime access <ArrowRight size={15} /></>}
               </button>}
         <p className="hp-plan-note">One-time payment — no subscription, ever.</p>
@@ -195,14 +219,14 @@ export default function PricingSection() {
           ? <span className="hp-plan-active"><Check size={15} /> Monthly plan active{ents?.subscription?.renewsAt ? ` — renews ${formatDate(ents.subscription.renewsAt)}` : ""}</span>
           : lifetimeActive
             ? <span className="hp-plan-cover">Covered by your lifetime access</span>
-            : <button className="btn btn-secondary hp-plan-cta" id="pricing-monthly-cta" disabled={busy !== null} onClick={() => void buy("monthly")}>
+            : <button className="btn btn-secondary hp-plan-cta" id="pricing-monthly-cta" disabled={purchaseDisabled} onClick={() => void buy("monthly")}>
                 {busy === "monthly" ? "Connecting to checkout…" : <>Start monthly <ArrowRight size={15} /></>}
               </button>}
         <p className="hp-plan-note">Cancel anytime — keep access until the paid month ends.</p>
       </section>
     </div>
 
-    {notice && <p className="hp-pricing-notice" role="alert">{notice}</p>}
+    {(notice || auth.error) && <p className="hp-pricing-notice" role="alert">{notice || auth.error}</p>}
     <p className="hp-pricing-fineprint">
       Checkout and payments are handled by{" "}
       <a href="https://www.paddle.com" target="_blank" rel="noopener noreferrer">Paddle</a>
