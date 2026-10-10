@@ -6,8 +6,15 @@ import {
 } from "lucide-react";
 import Brand from "../components/ui/Brand";
 import PricingSection from "../components/home/PricingSection";
-import { CharacterPortrait, OutfitGlyph, SceneVignette, type VignetteId } from "../components/home/graphics";
 import { PRIMARY_GENERATORS, formatGeneratorPrompt, type GeneratorId } from "../utils/generators";
+import mayaPortrait from "../assets/home/maya-portrait.webp";
+import mayaAvatar from "../assets/home/maya-avatar.webp";
+import sceneFlowerShop from "../assets/home/scene-flower-shop.webp";
+import sceneRooftopGarden from "../assets/home/scene-rooftop-garden.webp";
+import sceneNightMarket from "../assets/home/scene-night-market.webp";
+import outfitMustardDress from "../assets/home/outfit-mustard-dress.webp";
+import outfitSkyBlueTop from "../assets/home/outfit-sky-blue-top.webp";
+import outfitEmeraldTank from "../assets/home/outfit-emerald-tank.webp";
 import type { Location, Outfit, Scene } from "../types";
 import "./HomePage.css";
 
@@ -15,17 +22,19 @@ import "./HomePage.css";
 const SAMPLE_CHARACTER = {
   name: "Maya Chen",
   identityFields: [
-    { key: "hair", label: "Hair", value: "long black wavy hair", locked: true },
+    { key: "hair", label: "Hair", value: "long dark brown wavy hair", locked: true },
     { key: "skin", label: "Skin tone", value: "warm medium skin tone", locked: true },
     { key: "eyes", label: "Eyes", value: "expressive dark eyes", locked: true },
   ],
 };
 
 const OUTFITS: Outfit[] = [
-  { id: "outfit-1", characterId: "sample", name: "Cream linen set", description: "A cream linen shirt and relaxed trousers", garmentType: "top", primaryColor: "cream", colorFamily: "white", accessories: "Small gold earrings", referenceAssetId: undefined, notes: "", createdAt: "", updatedAt: "" },
-  { id: "outfit-2", characterId: "sample", name: "Lavender wrap dress", description: "A lavender wrap dress with soft pleats", garmentType: "dress", primaryColor: "lavender", colorFamily: "purple", accessories: "Silver bracelet", referenceAssetId: undefined, notes: "", createdAt: "", updatedAt: "" },
-  { id: "outfit-3", characterId: "sample", name: "Deep blue casual outfit", description: "A deep blue tee and light-wash jeans", garmentType: "top", primaryColor: "deep blue", colorFamily: "blue", accessories: "", referenceAssetId: undefined, notes: "", createdAt: "", updatedAt: "" },
+  { id: "outfit-1", characterId: "sample", name: "Mustard midi dress", description: "A mustard yellow long-sleeve midi dress", garmentType: "dress", primaryColor: "mustard yellow", colorFamily: "yellow", accessories: "Small gold earrings", referenceAssetId: undefined, notes: "", createdAt: "", updatedAt: "" },
+  { id: "outfit-2", characterId: "sample", name: "Sky-blue top & white trousers", description: "A sky-blue sleeveless top and white wide-leg trousers", garmentType: "top", primaryColor: "sky blue", colorFamily: "blue", accessories: "", referenceAssetId: undefined, notes: "", createdAt: "", updatedAt: "" },
+  { id: "outfit-3", characterId: "sample", name: "Emerald tank & beige trousers", description: "An emerald sleeveless tank and tailored beige trousers", garmentType: "top", primaryColor: "emerald", colorFamily: "green", accessories: "", referenceAssetId: undefined, notes: "", createdAt: "", updatedAt: "" },
 ];
+const OUTFIT_IMAGES = [outfitMustardDress, outfitSkyBlueTop, outfitEmeraldTank];
+const SCENE_IMAGES = [sceneFlowerShop, sceneRooftopGarden, sceneNightMarket];
 
 const LOCATIONS: Location[] = [
   { id: "loc-1", name: "Flower shop", category: "indoor-public", setting: "A small flower shop with fresh bouquets", lighting: "Soft morning light", mood: "Calm and fresh", referenceAssetId: undefined, notes: "", createdAt: "", updatedAt: "" },
@@ -33,10 +42,10 @@ const LOCATIONS: Location[] = [
   { id: "loc-3", name: "Night market", category: "urban", setting: "A busy night market street", lighting: "Warm lantern light", mood: "Lively and bright", referenceAssetId: undefined, notes: "", createdAt: "", updatedAt: "" },
 ];
 
-const SCENES: Array<{ title: string; action: string; vignette: VignetteId }> = [
-  { title: "Flower shop", action: "Maya selects fresh flowers in a small flower shop, lit by soft morning light.", vignette: "flower-shop" },
-  { title: "Rooftop garden", action: "Maya walks through a rooftop garden at golden hour.", vignette: "rooftop" },
-  { title: "Night market", action: "Maya browses a night market filled with warm lantern light.", vignette: "night-market" },
+const SCENES: Array<{ title: string; action: string }> = [
+  { title: "Flower shop", action: "Maya selects fresh flowers in a small flower shop, lit by soft morning light." },
+  { title: "Rooftop garden", action: "Maya walks through a rooftop garden at golden hour." },
+  { title: "Night market", action: "Maya browses a night market filled with warm lantern light." },
 ];
 
 function sampleScene(index: number): Scene {
@@ -142,7 +151,9 @@ export default function HomePage() {
             <div className="hp-canvas-deco" aria-hidden="true" />
 
             <div className="hp-float hp-portrait-card">
-              <div className="hp-portrait"><CharacterPortrait /></div>
+              <div className="hp-portrait">
+                <img src={mayaPortrait} alt="Portrait of Maya Chen" width={640} height={853} fetchPriority="high" decoding="async" />
+              </div>
               <div className="hp-portrait-info">
                 <div className="hp-portrait-name"><UserRound size={14} /> Maya Chen</div>
                 {SAMPLE_CHARACTER.identityFields.slice(0, 2).map(f =>
@@ -152,17 +163,21 @@ export default function HomePage() {
             </div>
 
             <div className="hp-float hp-chip hp-chip-outfit">
-              <span className="hp-chip-icon hp-chip-cream"><Shirt size={13} /></span>
-              Cream linen set
+              <span className="hp-chip-icon hp-chip-mustard"><Shirt size={13} /></span>
+              Mustard midi dress
             </div>
 
             <div className="hp-float hp-scene-card hp-scene-1 is-active">
-              <div className="hp-scene-thumb"><SceneVignette id="flower-shop" /></div>
+              <div className="hp-scene-thumb">
+                <img src={sceneFlowerShop} alt="Maya at the flower shop in a mustard midi dress" width={800} height={500} decoding="async" />
+              </div>
               <div className="hp-scene-meta"><span className="hp-scene-num">01</span> Flower shop</div>
             </div>
 
             <div className="hp-float hp-scene-card hp-scene-2">
-              <div className="hp-scene-thumb"><SceneVignette id="rooftop" /></div>
+              <div className="hp-scene-thumb">
+                <img src={sceneRooftopGarden} alt="Maya on a rooftop garden in a sky-blue top and white trousers" width={800} height={500} decoding="async" />
+              </div>
               <div className="hp-scene-meta"><span className="hp-scene-num">02</span> Rooftop garden</div>
             </div>
 
@@ -171,7 +186,9 @@ export default function HomePage() {
             </div>
 
             <div className="hp-float hp-scene-card hp-scene-3">
-              <div className="hp-scene-thumb"><SceneVignette id="night-market" /></div>
+              <div className="hp-scene-thumb">
+                <img src={sceneNightMarket} alt="Maya at the night market in an emerald tank and beige trousers" width={800} height={500} decoding="async" />
+              </div>
               <div className="hp-scene-meta"><span className="hp-scene-num">03</span> Night market</div>
             </div>
 
@@ -196,7 +213,7 @@ export default function HomePage() {
             <h3>Choose a character</h3>
             <p>Create your cast once — hair, skin, eyes — and lock the details that make her recognizable.</p>
             <div className="hp-step-art" aria-hidden="true">
-              <div className="hp-art-avatar"><CharacterPortrait /></div>
+              <div className="hp-art-avatar"><img src={mayaAvatar} alt="" width={256} height={256} loading="lazy" decoding="async" /></div>
               <div className="hp-art-profile">
                 <strong>Maya Chen</strong>
                 {SAMPLE_CHARACTER.identityFields.slice(0, 2).map(f =>
@@ -269,9 +286,11 @@ export default function HomePage() {
           <section className="hp-bento-card hp-b-wardrobe" aria-label="Wardrobe and locations">
             <div className="hp-card-head"><h3><Shirt size={15} /> Wardrobe &amp; locations</h3></div>
             <div className="hp-swatch-row">
-              {OUTFITS.map(o =>
+              {OUTFITS.map((o, i) =>
                 <div className="hp-swatch" key={o.id}>
-                  <div className={`hp-swatch-art hp-swatch-${o.colorFamily}`}><OutfitGlyph kind={o.garmentType === "dress" ? "dress" : o.colorFamily === "blue" ? "casual" : "shirt"} /></div>
+                  <div className={`hp-swatch-art hp-swatch-${o.colorFamily}`}>
+                    <img src={OUTFIT_IMAGES[i]} alt="" width={480} height={599} loading="lazy" decoding="async" />
+                  </div>
                   <strong>{o.name}</strong>
                 </div>,
               )}
@@ -279,7 +298,9 @@ export default function HomePage() {
             <div className="hp-loc-list">
               {LOCATIONS.map((l, i) =>
                 <div className="hp-loc-row" key={l.id}>
-                  <div className="hp-loc-thumb"><SceneVignette id={SCENES[i].vignette} /></div>
+                  <div className="hp-loc-thumb">
+                    <img src={SCENE_IMAGES[i]} alt="" width={800} height={500} loading="lazy" decoding="async" />
+                  </div>
                   <div><strong>{l.name}</strong><span>{l.lighting}</span></div>
                 </div>,
               )}
@@ -344,12 +365,17 @@ export default function HomePage() {
                 <div className="hp-ext-scene is-active"><span>1</span> Flower shop <em>draft</em></div>
                 <div className="hp-ext-details">
                   <strong>Scene details</strong>
-                  <span>👗 Cream linen set</span>
+                  <span>👗 {OUTFITS[0].name}</span>
                   <span>📍 Flower shop</span>
                   <span>🎬 {SCENES[0].action}</span>
                 </div>
                 <span className="hp-ext-label">Prompt preview</span>
-                <div className="hp-ext-chip"><span className="hp-ext-chip-thumb"><CharacterPortrait /></span> Maya Chen</div>
+                <div className="hp-ext-chip">
+                  <span className="hp-ext-chip-thumb">
+                    <img src={mayaAvatar} alt="" width={256} height={256} loading="lazy" decoding="async" />
+                  </span>
+                  Maya Chen
+                </div>
                 <div className="hp-ext-prompt">{heroPrompt}</div>
               </div>
               <div className="hp-ext-footer">
