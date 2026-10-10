@@ -156,6 +156,10 @@ authRouter.post("/token", async (req: Request, res: Response) => {
   }
   const userId = await consumeAuthCode(code, String(req.body?.verifier ?? ""));
   if (!userId) {
+    // Repeated rejects from one client usually mean an auth redirect loop:
+    // stale single-use code, PKCE verifier mismatch, or expiry after a slow
+    // Google round trip. Logged without the code itself.
+    console.warn("[auth] one-time code exchange rejected (unknown, already used, expired, or verifier mismatch)");
     res.status(401).json({ error: "Invalid or expired code. Please sign in again." });
     return;
   }

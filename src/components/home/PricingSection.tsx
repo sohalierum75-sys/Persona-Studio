@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Check } from "lucide-react";
-import { useAuth, signInWithGoogle } from "../../lib/auth";
+import { useAuth, signInWithGoogle, initAuth } from "../../lib/auth";
 import { openPaddleCheckout } from "../../lib/paddle-checkout";
 import {
   fetchBillingPlans, fetchEntitlements, startCheckout,
@@ -74,7 +74,15 @@ export default function PricingSection() {
     setNotice("");
     try {
       const config = await requireCheckoutConfiguration();
-      if (!signedIn) {
+      let authenticated = signedIn;
+      if (!authenticated && auth.status === "error") {
+        // "error" can hide a still-valid stored session (e.g. a failed OAuth
+        // return above). Restore it once instead of starting Google again —
+        // otherwise a single bad callback loops the user through sign-in.
+        const state = await initAuth();
+        authenticated = state.status === "signed-in";
+      }
+      if (!authenticated) {
         saveCheckoutPlan(plan);
         const target = new URL(window.location.href);
         target.searchParams.set("checkout", plan);
@@ -87,6 +95,7 @@ export default function PricingSection() {
       const { url } = await startCheckout(plan);
       await openPaddleCheckout(url, config, auth.user?.email);
     } catch (err) {
+      console.error(`[checkout] could not start ${plan} checkout:`, err);
       setNotice(err instanceof Error ? err.message : "Checkout could not be started.");
       refreshPlansAndEnts();
     } finally {

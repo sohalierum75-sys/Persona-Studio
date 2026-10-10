@@ -17,6 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PATHUnderTest = process.env.CHECKOUT_PATH === 'root' ? '' : (process.env.CHECKOUT_PATH || '/pricing');
 const serverDir = path.join(root, 'server');
 const distDir = path.join(root, 'dist');
 const PORT = 3910;
@@ -72,7 +73,7 @@ try {
 
   for (const plan of ['lifetime', 'monthly']) {
     const before = events.checkoutCalls.length;
-    await page.goto(`${base}/pricing?checkout=${plan}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(`${base}${PATHUnderTest}${PATHUnderTest.includes('?') ? '&' : '?'}checkout=${plan}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     const stop = await waitFor(plan, before, 45000);
     const calls = events.checkoutCalls.slice(before).filter(p => p === plan);
     const intentCleared = await page.evaluate(() => sessionStorage.getItem('ps_billing_intent') === null);

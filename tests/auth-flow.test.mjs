@@ -120,14 +120,31 @@ test('failed code exchange remains visible when opening Studio', async t => {
   assert.match(await page.locator('body').innerText(), /Invalid or expired code/);
 });
 
-test('a cancelled callback is not hidden by a previously saved account', async t => {
+test('a cancelled callback restores the saved session instead of starting a Google loop', async t => {
   const { page, calls } = await pageFor(t);
   await page.goto(origin);
   await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
   await page.goto(origin + '/?auth_error=cancelled');
-  await page.getByRole('alert').waitFor();
-  assert.match(await page.getByRole('alert').innerText(), /Sign-in was cancelled/);
-  assert.equal(calls.authenticated, 0);
+  await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
+  assert.ok(calls.authenticated > 0, 'the stored session must be used, not discarded');
+});
+
+test('stale callback code keeps the session and still resumes checkout once', async t => {
+  const { page } = await pageFor(t, 401);
+  await page.goto(origin);
+  await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
+  await page.evaluate(() => sessionStorage.setItem('ps_pkce', 'v'.repeat(43)));
+  let checkouts = 0;
+  await page.route('**/api/billing/checkout', route => {
+    checkouts++;
+    assert.deepEqual(route.request().postDataJSON(), { plan: 'monthly' });
+    assert.equal(route.request().headers().authorization, 'Bearer test-access');
+    return route.fulfill({ json: { url: 'https://sandbox-checkout.paddle.com/checkout/resumed' } });
+  });
+  await page.route('https://sandbox-checkout.paddle.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
+  await page.goto(origin + '/?checkout=monthly&code=stale-code');
+  await page.waitForURL('https://sandbox-checkout.paddle.com/checkout/resumed');
+  assert.equal(checkouts, 1);
 });
 
 for (const plan of ['lifetime', 'monthly']) {

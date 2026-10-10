@@ -105,15 +105,20 @@ export async function initAuth(): Promise<AuthState> {
 
     try {
       // 1. Returning from the web OAuth redirect? (?code=… / ?auth_error=…)
+      // A failed callback must NOT discard a still-valid stored session: one
+      // stale code or transient 5xx would otherwise sign the user out and turn
+      // every checkout click into another Google round trip (login loop).
+      // The error is kept and surfaced by the UI, but session restoration runs.
       const urlResult = await consumeUrlAuthCode();
+      let callbackError: string | null = null;
       if (urlResult && "user" in urlResult) {
         setState({ status: "signed-in", user: urlResult.user, error: null, sessionExpired: false });
         scheduleProactiveRefresh();
         return _state;
       }
       if (urlResult && "error" in urlResult) {
-        setState({ status: "error", user: null, error: urlResult.error });
-        return _state;
+        callbackError = urlResult.error;
+        console.error("[auth] OAuth callback failed — falling back to the stored session:", urlResult.error);
       }
 
       // 2. Restore a persisted session
@@ -124,16 +129,18 @@ export async function initAuth(): Promise<AuthState> {
           tokens = (await refreshSession()) ?? (await getTokens());
         }
         if (tokens) {
-          setState({ status: "signed-in", user: tokens.user, error: null, sessionExpired: false });
+          setState({ status: "signed-in", user: tokens.user, error: callbackError, sessionExpired: false });
           scheduleProactiveRefresh();
           return _state;
         }
-        setState({ status: "signed-out", user: null, sessionExpired: true });
+        setState({ status: callbackError ? "error" : "signed-out", user: null, error: callbackError, sessionExpired: !callbackError });
         return _state;
       }
 
-      // 3. No session at all
-      setState({ status: "signed-out", user: null, error: null });
+      // 3. No session at all — the callback error (if any) is the story.
+      setState(callbackError
+        ? { status: "error", user: null, error: callbackError, sessionExpired: false }
+        : { status: "signed-out", user: null, error: null, sessionExpired: false });
     } catch (err) {
       setState({
         status: "error",
