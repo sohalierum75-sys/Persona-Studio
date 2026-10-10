@@ -101,7 +101,7 @@ export default function SceneReferencesPanel({ scene }: Props) {
                 aria-label={entry.caption ? `Preview ${entry.caption}` : "Preview image"}
               >
                 {asset
-                  ? <img src={asset.dataUrl} alt={entry.caption ?? "Scene reference"} draggable={false} />
+                  ? <img loading="lazy" decoding="async" src={asset.dataUrl} alt={entry.caption ?? "Scene reference"} draggable={false} />
                   : <span className="scene-ref-missing">missing</span>}
               </button>
               <button

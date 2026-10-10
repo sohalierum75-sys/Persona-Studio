@@ -1,0 +1,195 @@
+{
+  "label": "before",
+  "fixture": {
+    "episodes": 1000,
+    "groups": 1000,
+    "scenes": 5000,
+    "privateSnapshotBytes": 4096,
+    "totalRows": 7001
+  },
+  "usageMs": [
+    553.1615000000002,
+    585.4603999999999,
+    510.0690000000013,
+    635.473,
+    558.3152000000009,
+    489.10210000000006,
+    515.9487999999983
+  ],
+  "queries": [
+    {
+      "duration": 195,
+      "query": "SELECT \"perf_1791657699736\".\"Entity\".\"userId\", \"perf_1791657699736\".\"Entity\".\"id\", \"perf_1791657699736\".\"Entity\".\"kind\", \"perf_1791657699736\".\"Entity\".\"data\", \"perf_1791657699736\".\"Entity\".\"version\", \"perf_1791657699736\".\"Entity\".\"createdAt\", \"perf_1791657699736\".\"Entity\".\"updatedAt\", \"perf_1791657699736\".\"Entity\".\"deletedAt\" FROM \"perf_1791657699736\".\"Entity\" WHERE (\"perf_1791657699736\".\"Entity\".\"userId\" = $1 AND \"perf_1791657699736\".\"Entity\".\"deletedAt\" IS NULL AND \"perf_1791657699736\".\"Entity\".\"kind\" IN ($2,$3,$4)) OFFSET $5"
+    },
+    {
+      "duration": 309,
+      "query": "SELECT \"perf_1791657699736\".\"Entity\".\"userId\", \"perf_1791657699736\".\"Entity\".\"id\", \"perf_1791657699736\".\"Entity\".\"kind\", \"perf_1791657699736\".\"Entity\".\"data\", \"perf_1791657699736\".\"Entity\".\"version\", \"perf_1791657699736\".\"Entity\".\"createdAt\", \"perf_1791657699736\".\"Entity\".\"updatedAt\", \"perf_1791657699736\".\"Entity\".\"deletedAt\" FROM \"perf_1791657699736\".\"Entity\" WHERE (\"perf_1791657699736\".\"Entity\".\"userId\" = $1 AND \"perf_1791657699736\".\"Entity\".\"deletedAt\" IS NULL AND \"perf_1791657699736\".\"Entity\".\"kind\" IN ($2,$3,$4)) OFFSET $5"
+    },
+    {
+      "duration": 187,
+      "query": "SELECT \"perf_1791657699736\".\"Entity\".\"userId\", \"perf_1791657699736\".\"Entity\".\"id\", \"perf_1791657699736\".\"Entity\".\"kind\", \"perf_1791657699736\".\"Entity\".\"data\", \"perf_1791657699736\".\"Entity\".\"version\", \"perf_1791657699736\".\"Entity\".\"createdAt\", \"perf_1791657699736\".\"Entity\".\"updatedAt\", \"perf_1791657699736\".\"Entity\".\"deletedAt\" FROM \"perf_1791657699736\".\"Entity\" WHERE (\"perf_1791657699736\".\"Entity\".\"userId\" = $1 AND \"perf_1791657699736\".\"Entity\".\"deletedAt\" IS NULL AND \"perf_1791657699736\".\"Entity\".\"kind\" IN ($2,$3,$4)) OFFSET $5"
+    },
+    {
+      "duration": 274,
+      "query": "SELECT \"perf_1791657699736\".\"Entity\".\"userId\", \"perf_1791657699736\".\"Entity\".\"id\", \"perf_1791657699736\".\"Entity\".\"kind\", \"perf_1791657699736\".\"Entity\".\"data\", \"perf_1791657699736\".\"Entity\".\"version\", \"perf_1791657699736\".\"Entity\".\"createdAt\", \"perf_1791657699736\".\"Entity\".\"updatedAt\", \"perf_1791657699736\".\"Entity\".\"deletedAt\" FROM \"perf_1791657699736\".\"Entity\" WHERE (\"perf_1791657699736\".\"Entity\".\"userId\" = $1 AND \"perf_1791657699736\".\"Entity\".\"deletedAt\" IS NULL AND \"perf_1791657699736\".\"Entity\".\"kind\" IN ($2,$3,$4)) OFFSET $5"
+    },
+    {
+      "duration": 195,
+      "query": "SELECT \"perf_1791657699736\".\"Entity\".\"userId\", \"perf_1791657699736\".\"Entity\".\"id\", \"perf_1791657699736\".\"Entity\".\"kind\", \"perf_1791657699736\".\"Entity\".\"data\", \"perf_1791657699736\".\"Entity\".\"version\", \"perf_1791657699736\".\"Entity\".\"createdAt\", \"perf_1791657699736\".\"Entity\".\"updatedAt\", \"perf_1791657699736\".\"Entity\".\"deletedAt\" FROM \"perf_1791657699736\".\"Entity\" WHERE (\"perf_1791657699736\".\"Entity\".\"userId\" = $1 AND \"perf_1791657699736\".\"Entity\".\"deletedAt\" IS NULL AND \"perf_1791657699736\".\"Entity\".\"kind\" IN ($2,$3,$4)) OFFSET $5"
+    },
+    {
+      "duration": 202,
+      "query": "SELECT \"perf_1791657699736\".\"Entity\".\"userId\", \"perf_1791657699736\".\"Entity\".\"id\", \"perf_1791657699736\".\"Entity\".\"kind\", \"perf_1791657699736\".\"Entity\".\"data\", \"perf_1791657699736\".\"Entity\".\"version\", \"perf_1791657699736\".\"Entity\".\"createdAt\", \"perf_1791657699736\".\"Entity\".\"updatedAt\", \"perf_1791657699736\".\"Entity\".\"deletedAt\" FROM \"perf_1791657699736\".\"Entity\" WHERE (\"perf_1791657699736\".\"Entity\".\"userId\" = $1 AND \"perf_1791657699736\".\"Entity\".\"deletedAt\" IS NULL AND \"perf_1791657699736\".\"Entity\".\"kind\" IN ($2,$3,$4)) OFFSET $5"
+    },
+    {
+      "duration": 189,
+      "query": "SELECT \"perf_1791657699736\".\"Entity\".\"userId\", \"perf_1791657699736\".\"Entity\".\"id\", \"perf_1791657699736\".\"Entity\".\"kind\", \"perf_1791657699736\".\"Entity\".\"data\", \"perf_1791657699736\".\"Entity\".\"version\", \"perf_1791657699736\".\"Entity\".\"createdAt\", \"perf_1791657699736\".\"Entity\".\"updatedAt\", \"perf_1791657699736\".\"Entity\".\"deletedAt\" FROM \"perf_1791657699736\".\"Entity\" WHERE (\"perf_1791657699736\".\"Entity\".\"userId\" = $1 AND \"perf_1791657699736\".\"Entity\".\"deletedAt\" IS NULL AND \"perf_1791657699736\".\"Entity\".\"kind\" IN ($2,$3,$4)) OFFSET $5"
+    }
+  ],
+  "api": [
+    {
+      "endpoint": "/api/sync",
+      "samples": [
+        {
+          "ms": 1761.2164000000012,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 2726.0224000000017,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 2301.678899999999,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 2660.5591999999997,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 2332.1206999999995,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 2455.7296000000024,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 3312.6803999999975,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/billing/entitlements",
+      "samples": [
+        {
+          "ms": 477.49059999999736,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 484.0820999999996,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 647.1217000000033,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 555.816700000003,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 468.13320000000385,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 523.6526999999987,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 453.8009999999995,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        }
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "QUERY PLAN": [
+        {
+          "Plan": {
+            "Node Type": "Seq Scan",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Relation Name": "Entity",
+            "Alias": "Entity",
+            "Startup Cost": 0,
+            "Total Cost": 399.77,
+            "Plan Rows": 6001,
+            "Plan Width": 298,
+            "Actual Startup Time": 0.014,
+            "Actual Total Time": 2.093,
+            "Actual Rows": 6001,
+            "Actual Loops": 1,
+            "Filter": "((\"deletedAt\" IS NULL) AND (\"userId\" = '8f0b0cb7-8cd7-4db5-8e3e-dcea2a2eb459'::text) AND (kind = ANY ('{character,episode,scene}'::text[])))",
+            "Rows Removed by Filter": 1000,
+            "Shared Hit Blocks": 286,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning": {
+            "Shared Hit Blocks": 52,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.743,
+          "Triggers": [],
+          "Execution Time": 2.292
+        }
+      ]
+    }
+  ]
+}

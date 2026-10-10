@@ -1,0 +1,715 @@
+{
+  "origin": "http://127.0.0.1:60558",
+  "measuredAt": "2026-10-10T19:00:22.488Z",
+  "conditions": "5 cold contexts, 80ms latency, 1.6Mbps down, 4x CPU slowdown; local billing response mocked",
+  "runs": [
+    {
+      "ttfbMs": 25.5,
+      "domContentLoadedMs": 1058.2000000001863,
+      "loadMs": 1059.2000000001863,
+      "fcpMs": 1324,
+      "lcpMs": 2528,
+      "resources": [
+        {
+          "path": "/assets/main-Cz-jfmKp.js",
+          "bytes": 53369,
+          "transferBytes": 15484
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/jsx-runtime-a64XzOYr.js",
+          "bytes": 11284,
+          "transferBytes": 4719
+        },
+        {
+          "path": "/assets/dist-B3IsjweP.js",
+          "bytes": 19222,
+          "transferBytes": 7437
+        },
+        {
+          "path": "/assets/Brand-DlW07FI_.js",
+          "bytes": 9301,
+          "transferBytes": 3968
+        },
+        {
+          "path": "/assets/react-DRapRMTK.js",
+          "bytes": 695,
+          "transferBytes": 995
+        },
+        {
+          "path": "/assets/queue-I18Vx_wJ.js",
+          "bytes": 10480,
+          "transferBytes": 4154
+        },
+        {
+          "path": "/assets/components-DAlFUfrb.js",
+          "bytes": 251940,
+          "transferBytes": 77632
+        },
+        {
+          "path": "/assets/main-C4ppUYzd.css",
+          "bytes": 25575,
+          "transferBytes": 5568
+        },
+        {
+          "path": "/assets/components-BWuOPNGp.css",
+          "bytes": 44354,
+          "transferBytes": 9234
+        },
+        {
+          "path": "/assets/inter-ui-C5o4k0Ep.woff2",
+          "bytes": 110868,
+          "transferBytes": 111168
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 2293,
+          "transferBytes": 1042
+        }
+      ]
+    },
+    {
+      "ttfbMs": 11.400000000372529,
+      "domContentLoadedMs": 987.9000000003725,
+      "loadMs": 988,
+      "fcpMs": 1076,
+      "lcpMs": 1836,
+      "resources": [
+        {
+          "path": "/assets/main-Cz-jfmKp.js",
+          "bytes": 53369,
+          "transferBytes": 15484
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/jsx-runtime-a64XzOYr.js",
+          "bytes": 11284,
+          "transferBytes": 4719
+        },
+        {
+          "path": "/assets/dist-B3IsjweP.js",
+          "bytes": 19222,
+          "transferBytes": 7437
+        },
+        {
+          "path": "/assets/Brand-DlW07FI_.js",
+          "bytes": 9301,
+          "transferBytes": 3968
+        },
+        {
+          "path": "/assets/react-DRapRMTK.js",
+          "bytes": 695,
+          "transferBytes": 995
+        },
+        {
+          "path": "/assets/queue-I18Vx_wJ.js",
+          "bytes": 10480,
+          "transferBytes": 4154
+        },
+        {
+          "path": "/assets/components-DAlFUfrb.js",
+          "bytes": 251940,
+          "transferBytes": 77632
+        },
+        {
+          "path": "/assets/components-BWuOPNGp.css",
+          "bytes": 44354,
+          "transferBytes": 9234
+        },
+        {
+          "path": "/assets/main-C4ppUYzd.css",
+          "bytes": 25575,
+          "transferBytes": 5568
+        },
+        {
+          "path": "/assets/inter-ui-C5o4k0Ep.woff2",
+          "bytes": 110868,
+          "transferBytes": 111168
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 2293,
+          "transferBytes": 1042
+        }
+      ]
+    },
+    {
+      "ttfbMs": 11.899999999441206,
+      "domContentLoadedMs": 1078.0999999996275,
+      "loadMs": 1079.2999999998137,
+      "fcpMs": 1332,
+      "lcpMs": 2372,
+      "resources": [
+        {
+          "path": "/assets/main-Cz-jfmKp.js",
+          "bytes": 53369,
+          "transferBytes": 15484
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/jsx-runtime-a64XzOYr.js",
+          "bytes": 11284,
+          "transferBytes": 4719
+        },
+        {
+          "path": "/assets/dist-B3IsjweP.js",
+          "bytes": 19222,
+          "transferBytes": 7437
+        },
+        {
+          "path": "/assets/Brand-DlW07FI_.js",
+          "bytes": 9301,
+          "transferBytes": 3968
+        },
+        {
+          "path": "/assets/react-DRapRMTK.js",
+          "bytes": 695,
+          "transferBytes": 995
+        },
+        {
+          "path": "/assets/queue-I18Vx_wJ.js",
+          "bytes": 10480,
+          "transferBytes": 4154
+        },
+        {
+          "path": "/assets/components-DAlFUfrb.js",
+          "bytes": 251940,
+          "transferBytes": 77632
+        },
+        {
+          "path": "/assets/components-BWuOPNGp.css",
+          "bytes": 44354,
+          "transferBytes": 9234
+        },
+        {
+          "path": "/assets/main-C4ppUYzd.css",
+          "bytes": 25575,
+          "transferBytes": 5568
+        },
+        {
+          "path": "/assets/inter-ui-C5o4k0Ep.woff2",
+          "bytes": 110868,
+          "transferBytes": 111168
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 2293,
+          "transferBytes": 1042
+        }
+      ]
+    },
+    {
+      "ttfbMs": 11.700000000186265,
+      "domContentLoadedMs": 1049.300000000745,
+      "loadMs": 1049.800000000745,
+      "fcpMs": 1144,
+      "lcpMs": 2156,
+      "resources": [
+        {
+          "path": "/assets/main-Cz-jfmKp.js",
+          "bytes": 53369,
+          "transferBytes": 15484
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/jsx-runtime-a64XzOYr.js",
+          "bytes": 11284,
+          "transferBytes": 4719
+        },
+        {
+          "path": "/assets/dist-B3IsjweP.js",
+          "bytes": 19222,
+          "transferBytes": 7437
+        },
+        {
+          "path": "/assets/Brand-DlW07FI_.js",
+          "bytes": 9301,
+          "transferBytes": 3968
+        },
+        {
+          "path": "/assets/react-DRapRMTK.js",
+          "bytes": 695,
+          "transferBytes": 995
+        },
+        {
+          "path": "/assets/queue-I18Vx_wJ.js",
+          "bytes": 10480,
+          "transferBytes": 4154
+        },
+        {
+          "path": "/assets/components-DAlFUfrb.js",
+          "bytes": 251940,
+          "transferBytes": 77632
+        },
+        {
+          "path": "/assets/main-C4ppUYzd.css",
+          "bytes": 25575,
+          "transferBytes": 5568
+        },
+        {
+          "path": "/assets/components-BWuOPNGp.css",
+          "bytes": 44354,
+          "transferBytes": 9234
+        },
+        {
+          "path": "/assets/inter-ui-C5o4k0Ep.woff2",
+          "bytes": 110868,
+          "transferBytes": 111168
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 2293,
+          "transferBytes": 1042
+        }
+      ]
+    },
+    {
+      "ttfbMs": 243.70000000018626,
+      "domContentLoadedMs": 1255.0999999996275,
+      "loadMs": 1255.4000000003725,
+      "fcpMs": 1400,
+      "lcpMs": 2100,
+      "resources": [
+        {
+          "path": "/assets/main-Cz-jfmKp.js",
+          "bytes": 53369,
+          "transferBytes": 15484
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/jsx-runtime-a64XzOYr.js",
+          "bytes": 11284,
+          "transferBytes": 4719
+        },
+        {
+          "path": "/assets/dist-B3IsjweP.js",
+          "bytes": 19222,
+          "transferBytes": 7437
+        },
+        {
+          "path": "/assets/Brand-DlW07FI_.js",
+          "bytes": 9301,
+          "transferBytes": 3968
+        },
+        {
+          "path": "/assets/react-DRapRMTK.js",
+          "bytes": 695,
+          "transferBytes": 995
+        },
+        {
+          "path": "/assets/queue-I18Vx_wJ.js",
+          "bytes": 10480,
+          "transferBytes": 4154
+        },
+        {
+          "path": "/assets/components-DAlFUfrb.js",
+          "bytes": 251940,
+          "transferBytes": 77632
+        },
+        {
+          "path": "/assets/components-BWuOPNGp.css",
+          "bytes": 44354,
+          "transferBytes": 9234
+        },
+        {
+          "path": "/assets/main-C4ppUYzd.css",
+          "bytes": 25575,
+          "transferBytes": 5568
+        },
+        {
+          "path": "/assets/inter-ui-C5o4k0Ep.woff2",
+          "bytes": 110868,
+          "transferBytes": 111168
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 2293,
+          "transferBytes": 1042
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "background.js",
+      "bytes": 843,
+      "gzipBytes": 440
+    },
+    {
+      "path": "favicon.svg",
+      "bytes": 9522,
+      "gzipBytes": 1490
+    },
+    {
+      "path": "icons.svg",
+      "bytes": 5031,
+      "gzipBytes": 2104
+    },
+    {
+      "path": "logo-180.png",
+      "bytes": 3874,
+      "gzipBytes": 3897
+    },
+    {
+      "path": "logo.png",
+      "bytes": 86255,
+      "gzipBytes": 84848
+    },
+    {
+      "path": "overlay.js",
+      "bytes": 7542,
+      "gzipBytes": 3118
+    },
+    {
+      "path": "persona-mark.svg",
+      "bytes": 306,
+      "gzipBytes": 204
+    },
+    {
+      "path": "assets\\AccountMenu-DOTkFC-R.js",
+      "bytes": 14465,
+      "gzipBytes": 5321
+    },
+    {
+      "path": "assets\\arrow-left-D--v8AIB.js",
+      "bytes": 200,
+      "gzipBytes": 179
+    },
+    {
+      "path": "assets\\Brand-DlW07FI_.js",
+      "bytes": 9301,
+      "gzipBytes": 3668
+    },
+    {
+      "path": "assets\\CharacterEditorPage-CEq3Fm_Q.js",
+      "bytes": 10067,
+      "gzipBytes": 3286
+    },
+    {
+      "path": "assets\\CharactersPage--te8J5QP.js",
+      "bytes": 5612,
+      "gzipBytes": 2032
+    },
+    {
+      "path": "assets\\circle-alert-CPuOAw6H.js",
+      "bytes": 310,
+      "gzipBytes": 220
+    },
+    {
+      "path": "assets\\circle-check-BwZWWxCX.js",
+      "bytes": 245,
+      "gzipBytes": 207
+    },
+    {
+      "path": "assets\\clock-DDHy56Mr.js",
+      "bytes": 204,
+      "gzipBytes": 185
+    },
+    {
+      "path": "assets\\components-BWuOPNGp.css",
+      "bytes": 44354,
+      "gzipBytes": 8934
+    },
+    {
+      "path": "assets\\components-DAlFUfrb.js",
+      "bytes": 251940,
+      "gzipBytes": 77332
+    },
+    {
+      "path": "assets\\dist-B3IsjweP.js",
+      "bytes": 19222,
+      "gzipBytes": 7137
+    },
+    {
+      "path": "assets\\EpisodePage-DZEzyWiJ.js",
+      "bytes": 73288,
+      "gzipBytes": 18709
+    },
+    {
+      "path": "assets\\GeneratorOptions-C8oIeWT_.js",
+      "bytes": 7369,
+      "gzipBytes": 2428
+    },
+    {
+      "path": "assets\\HistoryPage-Bg3oZLwj.js",
+      "bytes": 3591,
+      "gzipBytes": 1372
+    },
+    {
+      "path": "assets\\inter-ui-C5o4k0Ep.woff2",
+      "bytes": 110868,
+      "gzipBytes": 110899
+    },
+    {
+      "path": "assets\\jsx-runtime-a64XzOYr.js",
+      "bytes": 11284,
+      "gzipBytes": 4419
+    },
+    {
+      "path": "assets\\jszip.min-BIaAfRui.js",
+      "bytes": 95960,
+      "gzipBytes": 28323
+    },
+    {
+      "path": "assets\\LegalPage-L0An6b3P.css",
+      "bytes": 2141,
+      "gzipBytes": 797
+    },
+    {
+      "path": "assets\\LegalPage-sU23bsz6.js",
+      "bytes": 1208,
+      "gzipBytes": 540
+    },
+    {
+      "path": "assets\\LocationsPage-LK1TnYpl.js",
+      "bytes": 7076,
+      "gzipBytes": 2415
+    },
+    {
+      "path": "assets\\main-C4ppUYzd.css",
+      "bytes": 25575,
+      "gzipBytes": 5268
+    },
+    {
+      "path": "assets\\main-Cz-jfmKp.js",
+      "bytes": 53369,
+      "gzipBytes": 15184
+    },
+    {
+      "path": "assets\\panel-DAhExQW0.js",
+      "bytes": 9850,
+      "gzipBytes": 3422
+    },
+    {
+      "path": "assets\\plus-Be2rZDdG.js",
+      "bytes": 188,
+      "gzipBytes": 168
+    },
+    {
+      "path": "assets\\PricingPage-BmokGOmc.css",
+      "bytes": 25646,
+      "gzipBytes": 5298
+    },
+    {
+      "path": "assets\\PricingPage-ObDX5Bg9.js",
+      "bytes": 1090,
+      "gzipBytes": 515
+    },
+    {
+      "path": "assets\\PrivacyPolicyPage-DGa5SS1F.js",
+      "bytes": 5676,
+      "gzipBytes": 2066
+    },
+    {
+      "path": "assets\\queue-I18Vx_wJ.js",
+      "bytes": 10480,
+      "gzipBytes": 3854
+    },
+    {
+      "path": "assets\\react-DRapRMTK.js",
+      "bytes": 695,
+      "gzipBytes": 420
+    },
+    {
+      "path": "assets\\RefundPolicyPage-B2CuviJp.js",
+      "bytes": 3020,
+      "gzipBytes": 1252
+    },
+    {
+      "path": "assets\\rolldown-runtime-W7wSyTde.js",
+      "bytes": 979,
+      "gzipBytes": 567
+    },
+    {
+      "path": "assets\\SettingsPage-CTEqCEFr.js",
+      "bytes": 10181,
+      "gzipBytes": 3487
+    },
+    {
+      "path": "assets\\star-BEkjd79y.js",
+      "bytes": 507,
+      "gzipBytes": 310
+    },
+    {
+      "path": "assets\\store-CSY5D_BA.js",
+      "bytes": 25811,
+      "gzipBytes": 8826
+    },
+    {
+      "path": "assets\\StudioRoot-CIUUamxl.js",
+      "bytes": 5076,
+      "gzipBytes": 1993
+    },
+    {
+      "path": "assets\\sun-DWh9Jek-.js",
+      "bytes": 696,
+      "gzipBytes": 368
+    },
+    {
+      "path": "assets\\TermsPage-CvauzeXv.js",
+      "bytes": 7761,
+      "gzipBytes": 2828
+    },
+    {
+      "path": "assets\\triangle-alert-ZpZZOLOm.js",
+      "bytes": 327,
+      "gzipBytes": 245
+    },
+    {
+      "path": "assets\\upload-LfXKStt9.js",
+      "bytes": 265,
+      "gzipBytes": 212
+    },
+    {
+      "path": "assets\\user-CzWovRmv.js",
+      "bytes": 231,
+      "gzipBytes": 201
+    },
+    {
+      "path": "assets\\WardrobePage-BJaq9Tqv.js",
+      "bytes": 9044,
+      "gzipBytes": 2775
+    },
+    {
+      "path": "fonts\\inter-latin-variable.woff2",
+      "bytes": 352240,
+      "gzipBytes": 351777
+    },
+    {
+      "path": "fonts\\plus-jakarta-sans-latin-400.woff2",
+      "bytes": 11816,
+      "gzipBytes": 11839
+    },
+    {
+      "path": "fonts\\plus-jakarta-sans-latin-500.woff2",
+      "bytes": 12312,
+      "gzipBytes": 12335
+    },
+    {
+      "path": "fonts\\plus-jakarta-sans-latin-600.woff2",
+      "bytes": 12188,
+      "gzipBytes": 12211
+    },
+    {
+      "path": "fonts\\plus-jakarta-sans-latin-700.woff2",
+      "bytes": 12244,
+      "gzipBytes": 12267
+    },
+    {
+      "path": "icons\\icon128.png",
+      "bytes": 2747,
+      "gzipBytes": 2770
+    },
+    {
+      "path": "icons\\icon16.png",
+      "bytes": 339,
+      "gzipBytes": 362
+    },
+    {
+      "path": "icons\\icon32.png",
+      "bytes": 576,
+      "gzipBytes": 599
+    },
+    {
+      "path": "icons\\icon48.png",
+      "bytes": 850,
+      "gzipBytes": 873
+    }
+  ],
+  "apis": {}
+}

@@ -266,7 +266,7 @@ export default function ScenePromptsPanel({
               {snapshot.referenceImages && snapshot.referenceImages.length > 0 && (
                 <div className="scene-ref-strip">
                   {snapshot.referenceImages.map((img) => (
-                    <img key={img.id} src={img.dataUrl} alt={img.caption ?? "Snapshot reference"}
+                    <img loading="lazy" decoding="async" key={img.id} src={img.dataUrl} alt={img.caption ?? "Snapshot reference"}
                       title={img.caption} className="scene-ref-thumb-snap" />
                   ))}
                 </div>

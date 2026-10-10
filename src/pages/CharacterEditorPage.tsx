@@ -140,7 +140,7 @@ export default function CharacterEditorPage() {
             border: "1px solid var(--border)",
           }}>
             {portrait ? (
-              <img src={portrait.dataUrl} alt="Main portrait" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img loading="lazy" decoding="async" src={portrait.dataUrl} alt="Main portrait" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <div style={{
                 width: "100%", height: "100%", display: "flex", flexDirection: "column",
@@ -160,7 +160,7 @@ export default function CharacterEditorPage() {
                 className={`reference-thumb ${a.id === character.portraitAssetId ? "primary" : ""}`}
                 style={{ position: "relative" }}
               >
-                <img src={a.dataUrl} alt={a.label} />
+                <img loading="lazy" decoding="async" src={a.dataUrl} alt={a.label} />
                 <div className="reference-thumb-label">{a.label}</div>
                 <div style={{
                   position: "absolute", top: 4, right: 4,

@@ -234,7 +234,8 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     assert.equal((await request("/api/billing/entitlements",session.accessToken)).json.plan,"free");
     await page.locator(".account-avatar-btn").click();
     await page.getByText("Free plan",{exact:true}).waitFor();
-    await page.getByText("1 / 1 characters",{exact:true}).waitFor();
+    const characterUsage = page.locator('.account-menu-usage > div').filter({has: page.locator('dt', {hasText: /^characters$/})});
+    await characterUsage.locator('dd').filter({hasText: /^1\s*\/\s*1$/}).waitFor();
     assert.match(await page.getByRole("link",{name:"Upgrade to unlimited"}).getAttribute("href"),/pricing=1/);
     await page.locator(".account-avatar-btn").click();
     // The new account used Studio without a purchase; continue the multi-record

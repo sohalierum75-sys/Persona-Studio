@@ -1,0 +1,199 @@
+{
+  "label": "after",
+  "fixture": {
+    "episodes": 1000,
+    "groups": 1000,
+    "scenes": 5000,
+    "privateSnapshotBytes": 4096,
+    "totalRows": 7001
+  },
+  "usageMs": [
+    22.47490000000016,
+    21.612500000000182,
+    18.45850000000064,
+    19.90809999999874,
+    19.550199999999677,
+    18.051799999999275,
+    18.266200000000026
+  ],
+  "queries": [
+    {
+      "duration": 19,
+      "query": "\n    SELECT count(*) FILTER (WHERE kind = 'character') AS characters,\n           count(*) FILTER (WHERE kind = 'episode') AS episodes,\n           coalesce(sum(CASE WHEN kind = 'scene' THEN\n             CASE WHEN jsonb_typeof(data->'prompts') = 'array' THEN jsonb_array_length(data->'prompts')\n                  WHEN jsonb_typeof(data->'importedPrompts') = 'array' THEN jsonb_array_length(data->'importedPrompts')\n                  ELSE 0 END\n             ELSE 0 END), 0)::bigint AS prompts\n    FROM \"Entity\"\n    WHERE \"userId\" = $1 AND \"deletedAt\" IS NULL\n      AND kind IN ('character', 'episode', 'scene')\n  "
+    },
+    {
+      "duration": 20,
+      "query": "\n    SELECT count(*) FILTER (WHERE kind = 'character') AS characters,\n           count(*) FILTER (WHERE kind = 'episode') AS episodes,\n           coalesce(sum(CASE WHEN kind = 'scene' THEN\n             CASE WHEN jsonb_typeof(data->'prompts') = 'array' THEN jsonb_array_length(data->'prompts')\n                  WHEN jsonb_typeof(data->'importedPrompts') = 'array' THEN jsonb_array_length(data->'importedPrompts')\n                  ELSE 0 END\n             ELSE 0 END), 0)::bigint AS prompts\n    FROM \"Entity\"\n    WHERE \"userId\" = $1 AND \"deletedAt\" IS NULL\n      AND kind IN ('character', 'episode', 'scene')\n  "
+    },
+    {
+      "duration": 17,
+      "query": "\n    SELECT count(*) FILTER (WHERE kind = 'character') AS characters,\n           count(*) FILTER (WHERE kind = 'episode') AS episodes,\n           coalesce(sum(CASE WHEN kind = 'scene' THEN\n             CASE WHEN jsonb_typeof(data->'prompts') = 'array' THEN jsonb_array_length(data->'prompts')\n                  WHEN jsonb_typeof(data->'importedPrompts') = 'array' THEN jsonb_array_length(data->'importedPrompts')\n                  ELSE 0 END\n             ELSE 0 END), 0)::bigint AS prompts\n    FROM \"Entity\"\n    WHERE \"userId\" = $1 AND \"deletedAt\" IS NULL\n      AND kind IN ('character', 'episode', 'scene')\n  "
+    },
+    {
+      "duration": 19,
+      "query": "\n    SELECT count(*) FILTER (WHERE kind = 'character') AS characters,\n           count(*) FILTER (WHERE kind = 'episode') AS episodes,\n           coalesce(sum(CASE WHEN kind = 'scene' THEN\n             CASE WHEN jsonb_typeof(data->'prompts') = 'array' THEN jsonb_array_length(data->'prompts')\n                  WHEN jsonb_typeof(data->'importedPrompts') = 'array' THEN jsonb_array_length(data->'importedPrompts')\n                  ELSE 0 END\n             ELSE 0 END), 0)::bigint AS prompts\n    FROM \"Entity\"\n    WHERE \"userId\" = $1 AND \"deletedAt\" IS NULL\n      AND kind IN ('character', 'episode', 'scene')\n  "
+    },
+    {
+      "duration": 18,
+      "query": "\n    SELECT count(*) FILTER (WHERE kind = 'character') AS characters,\n           count(*) FILTER (WHERE kind = 'episode') AS episodes,\n           coalesce(sum(CASE WHEN kind = 'scene' THEN\n             CASE WHEN jsonb_typeof(data->'prompts') = 'array' THEN jsonb_array_length(data->'prompts')\n                  WHEN jsonb_typeof(data->'importedPrompts') = 'array' THEN jsonb_array_length(data->'importedPrompts')\n                  ELSE 0 END\n             ELSE 0 END), 0)::bigint AS prompts\n    FROM \"Entity\"\n    WHERE \"userId\" = $1 AND \"deletedAt\" IS NULL\n      AND kind IN ('character', 'episode', 'scene')\n  "
+    },
+    {
+      "duration": 17,
+      "query": "\n    SELECT count(*) FILTER (WHERE kind = 'character') AS characters,\n           count(*) FILTER (WHERE kind = 'episode') AS episodes,\n           coalesce(sum(CASE WHEN kind = 'scene' THEN\n             CASE WHEN jsonb_typeof(data->'prompts') = 'array' THEN jsonb_array_length(data->'prompts')\n                  WHEN jsonb_typeof(data->'importedPrompts') = 'array' THEN jsonb_array_length(data->'importedPrompts')\n                  ELSE 0 END\n             ELSE 0 END), 0)::bigint AS prompts\n    FROM \"Entity\"\n    WHERE \"userId\" = $1 AND \"deletedAt\" IS NULL\n      AND kind IN ('character', 'episode', 'scene')\n  "
+    },
+    {
+      "duration": 17,
+      "query": "\n    SELECT count(*) FILTER (WHERE kind = 'character') AS characters,\n           count(*) FILTER (WHERE kind = 'episode') AS episodes,\n           coalesce(sum(CASE WHEN kind = 'scene' THEN\n             CASE WHEN jsonb_typeof(data->'prompts') = 'array' THEN jsonb_array_length(data->'prompts')\n                  WHEN jsonb_typeof(data->'importedPrompts') = 'array' THEN jsonb_array_length(data->'importedPrompts')\n                  ELSE 0 END\n             ELSE 0 END), 0)::bigint AS prompts\n    FROM \"Entity\"\n    WHERE \"userId\" = $1 AND \"deletedAt\" IS NULL\n      AND kind IN ('character', 'episode', 'scene')\n  "
+    }
+  ],
+  "api": [
+    {
+      "endpoint": "/api/sync",
+      "samples": [
+        {
+          "ms": 1094.4878000000008,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 1258.9694,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 843.3936999999987,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 840.3793000000005,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 744.6732999999986,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 892.1740000000009,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 709.3662000000004,
+          "bytes": 22384236,
+          "status": 200,
+          "cacheControl": "no-store"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/billing/entitlements",
+      "samples": [
+        {
+          "ms": 42.2445000000007,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 21.047099999999773,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 22.103500000001077,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 18.875,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 21.14890000000014,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 18.38470000000052,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        },
+        {
+          "ms": 20.26000000000022,
+          "bytes": 200,
+          "status": 200,
+          "cacheControl": "no-store"
+        }
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "QUERY PLAN": [
+        {
+          "Plan": {
+            "Node Type": "Index Scan",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Scan Direction": "Forward",
+            "Index Name": "Entity_userId_kind_idx",
+            "Relation Name": "Entity",
+            "Alias": "Entity",
+            "Startup Cost": 0.29,
+            "Total Cost": 16.9,
+            "Plan Rows": 1,
+            "Plan Width": 156,
+            "Actual Startup Time": 0.026,
+            "Actual Total Time": 2.201,
+            "Actual Rows": 6001,
+            "Actual Loops": 1,
+            "Index Cond": "((\"userId\" = 'ec5237d4-e873-44c9-9df4-b20b3fc62434'::text) AND (kind = ANY ('{character,episode,scene}'::text[])))",
+            "Rows Removed by Index Recheck": 0,
+            "Filter": "(\"deletedAt\" IS NULL)",
+            "Rows Removed by Filter": 0,
+            "Shared Hit Blocks": 582,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning": {
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.123,
+          "Triggers": [],
+          "Execution Time": 2.425
+        }
+      ]
+    }
+  ]
+}

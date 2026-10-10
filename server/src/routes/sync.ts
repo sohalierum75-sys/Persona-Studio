@@ -9,6 +9,7 @@ import { sha256 } from "../lib/tokens.js";
 import { operationSchema, recordKinds, validateImage } from "../lib/images.js";
 import { hasActiveSubscription } from "../lib/paddle.js";
 import { freeLimits, getUsage, promptCount } from "../lib/plans.js";
+import { syncRecords } from "../lib/sync-records.js";
 
 export const syncRouter = Router();
 type Op = z.infer<typeof operationSchema>;
@@ -24,16 +25,7 @@ function stable(v: unknown): string {
 syncRouter.get("/", async (req, res) => {
   const userId = (req as unknown as AuthedRequest).authUser.id;
   const rows = await prisma.entity.findMany({ where: { userId }, orderBy: { id: "asc" } });
-  const records = rows.map(r => {
-    const data = r.data as Record<string, unknown>;
-    if (r.kind === "episode" && !r.deletedAt) {
-      data.sceneIds = rows.filter(s => s.kind === "scene" && !s.deletedAt && (s.data as any).episodeId === r.id)
-        .sort((a,b) => Number((a.data as any).order) - Number((b.data as any).order) || a.id.localeCompare(b.id)).map(s => s.id);
-      data.continuityGroupIds = rows.filter(s => s.kind === "continuityGroup" && !s.deletedAt && (s.data as any).episodeId === r.id).map(s => s.id);
-    }
-    if (r.kind === "continuityGroup" && !r.deletedAt) data.sceneIds = rows.filter(s => s.kind === "scene" && !s.deletedAt && (s.data as any).continuityGroupId === r.id).map(s => s.id);
-    return { id:r.id, kind:r.kind, data:r.deletedAt ? null : data, version:r.version, deleted:!!r.deletedAt, updatedAt:r.updatedAt.toISOString() };
-  });
+  const records = syncRecords(rows);
   res.json({ full:true, records, serverTime:new Date().toISOString() });
 });
 

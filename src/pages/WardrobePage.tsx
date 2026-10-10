@@ -87,7 +87,7 @@ export default function WardrobePage() {
               <div key={o.id} className="card wardrobe-card">
                 <div className="wardrobe-image">
                   {asset ? (
-                    <img src={asset.dataUrl} alt={o.name} />
+                    <img loading="lazy" decoding="async" src={asset.dataUrl} alt={o.name} />
                   ) : (
                     <div style={{
                       width: "100%", height: "100%", display: "flex",
@@ -226,7 +226,7 @@ function NewOutfitModal({ onClose }: { onClose: () => void }) {
             <label className="form-label">Reference image (optional)</label>
             {imageDataUrl ? (
               <div style={{ position: "relative", width: 80, height: 80 }}>
-                <img src={imageDataUrl} style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8 }} alt="outfit" />
+                <img loading="lazy" decoding="async" src={imageDataUrl} style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8 }} alt="outfit" />
                 <button className="btn btn-xs" style={{
                   position: "absolute", top: 2, right: 2,
                   background: "rgba(0,0,0,0.7)", color: "white", padding: "2px 4px",

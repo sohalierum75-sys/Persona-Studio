@@ -11,16 +11,16 @@ http://www.personastudio.site, https://www.personastudio.site {
 # Real static files (hashed /assets/*, /download/*) are served by the api's
 # static middleware; API endpoints and OAuth callbacks live under /api/*.
 personastudio.site {
+    # Compression is per response; no API response cache is introduced.
+    # Keep the event stream out of compression to preserve immediate delivery.
+    @compressible not path /api/events*
+    encode @compressible zstd gzip
     reverse_proxy api:3210
     header {
         X-Content-Type-Options nosniff
         Referrer-Policy no-referrer
         Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.paddle.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.paddle.com https://*.paddle.io; frame-src https://*.paddle.com https://*.paddle.io; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     }
-    # Vite emits content-hashed filenames under /assets/ — safe to cache hard.
-    # "defer" overrides the api's global Cache-Control: no-store on the response.
-    header /assets/* {
-        Cache-Control "public, max-age=31536000, immutable"
-        defer
-    }
+    # The API grants immutable caching only to existing content-hashed assets.
+    # Preserve no-store for HTML, private APIs and missing asset responses.
 }

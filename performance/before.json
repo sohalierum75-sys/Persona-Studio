@@ -1,0 +1,390 @@
+{
+  "origin": "http://127.0.0.1:55584",
+  "measuredAt": "2026-10-10T18:10:45.697Z",
+  "conditions": "5 cold contexts, 80ms latency, 1.6Mbps down, 4x CPU slowdown; local billing response mocked",
+  "runs": [
+    {
+      "ttfbMs": 36.10000000055879,
+      "domContentLoadedMs": 1462.800000000745,
+      "loadMs": 1463.300000000745,
+      "fcpMs": 1648,
+      "lcpMs": 2760,
+      "resources": [
+        {
+          "path": "/assets/main-Ba_gf5JE.js",
+          "bytes": 285188,
+          "transferBytes": 76105
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/components-PxDcQDPa.css",
+          "bytes": 44038,
+          "transferBytes": 9096
+        },
+        {
+          "path": "/assets/components-BLoXEaw-.js",
+          "bytes": 349788,
+          "transferBytes": 108430
+        },
+        {
+          "path": "/assets/main-CUq9JCEC.css",
+          "bytes": 30382,
+          "transferBytes": 5925
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 1908,
+          "transferBytes": 973
+        }
+      ]
+    },
+    {
+      "ttfbMs": 12.5,
+      "domContentLoadedMs": 1414.5999999996275,
+      "loadMs": 1414.8999999994412,
+      "fcpMs": 1488,
+      "lcpMs": 2200,
+      "resources": [
+        {
+          "path": "/assets/main-Ba_gf5JE.js",
+          "bytes": 285188,
+          "transferBytes": 76105
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/components-BLoXEaw-.js",
+          "bytes": 349788,
+          "transferBytes": 108430
+        },
+        {
+          "path": "/assets/components-PxDcQDPa.css",
+          "bytes": 44038,
+          "transferBytes": 9096
+        },
+        {
+          "path": "/assets/main-CUq9JCEC.css",
+          "bytes": 30382,
+          "transferBytes": 5925
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 1908,
+          "transferBytes": 973
+        }
+      ]
+    },
+    {
+      "ttfbMs": 13.799999999813735,
+      "domContentLoadedMs": 1493.1000000005588,
+      "loadMs": 1493.9000000003725,
+      "fcpMs": 1680,
+      "lcpMs": 2380,
+      "resources": [
+        {
+          "path": "/assets/main-Ba_gf5JE.js",
+          "bytes": 285188,
+          "transferBytes": 76105
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/components-BLoXEaw-.js",
+          "bytes": 349788,
+          "transferBytes": 108430
+        },
+        {
+          "path": "/assets/components-PxDcQDPa.css",
+          "bytes": 44038,
+          "transferBytes": 9096
+        },
+        {
+          "path": "/assets/main-CUq9JCEC.css",
+          "bytes": 30382,
+          "transferBytes": 5925
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 1908,
+          "transferBytes": 973
+        }
+      ]
+    },
+    {
+      "ttfbMs": 21.299999999813735,
+      "domContentLoadedMs": 1498.2999999998137,
+      "loadMs": 1499.4000000003725,
+      "fcpMs": 1656,
+      "lcpMs": 2404,
+      "resources": [
+        {
+          "path": "/assets/main-Ba_gf5JE.js",
+          "bytes": 285188,
+          "transferBytes": 76105
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/components-BLoXEaw-.js",
+          "bytes": 349788,
+          "transferBytes": 108430
+        },
+        {
+          "path": "/assets/components-PxDcQDPa.css",
+          "bytes": 44038,
+          "transferBytes": 9096
+        },
+        {
+          "path": "/assets/main-CUq9JCEC.css",
+          "bytes": 30382,
+          "transferBytes": 5925
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 1908,
+          "transferBytes": 973
+        }
+      ]
+    },
+    {
+      "ttfbMs": 14.299999999813735,
+      "domContentLoadedMs": 1545.5,
+      "loadMs": 1546.0999999996275,
+      "fcpMs": 1752,
+      "lcpMs": 2712,
+      "resources": [
+        {
+          "path": "/assets/main-Ba_gf5JE.js",
+          "bytes": 285188,
+          "transferBytes": 76105
+        },
+        {
+          "path": "/assets/rolldown-runtime-W7wSyTde.js",
+          "bytes": 979,
+          "transferBytes": 1279
+        },
+        {
+          "path": "/assets/components-BLoXEaw-.js",
+          "bytes": 349788,
+          "transferBytes": 108430
+        },
+        {
+          "path": "/assets/components-PxDcQDPa.css",
+          "bytes": 44038,
+          "transferBytes": 9096
+        },
+        {
+          "path": "/assets/main-CUq9JCEC.css",
+          "bytes": 30382,
+          "transferBytes": 5925
+        },
+        {
+          "path": "/fonts/inter-latin-variable.woff2",
+          "bytes": 352240,
+          "transferBytes": 352540
+        },
+        {
+          "path": "/persona-mark.svg",
+          "bytes": 306,
+          "transferBytes": 606
+        },
+        {
+          "path": "/api/billing/config",
+          "bytes": 0,
+          "transferBytes": 0
+        },
+        {
+          "path": "/download/latest.json",
+          "bytes": 1908,
+          "transferBytes": 973
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "background.js",
+      "bytes": 843,
+      "gzipBytes": 440
+    },
+    {
+      "path": "favicon.svg",
+      "bytes": 9522,
+      "gzipBytes": 1490
+    },
+    {
+      "path": "icons.svg",
+      "bytes": 5031,
+      "gzipBytes": 2104
+    },
+    {
+      "path": "logo-180.png",
+      "bytes": 3874,
+      "gzipBytes": 3897
+    },
+    {
+      "path": "logo.png",
+      "bytes": 86255,
+      "gzipBytes": 84848
+    },
+    {
+      "path": "overlay.js",
+      "bytes": 7542,
+      "gzipBytes": 3118
+    },
+    {
+      "path": "persona-mark.svg",
+      "bytes": 306,
+      "gzipBytes": 204
+    },
+    {
+      "path": "assets\\components-BLoXEaw-.js",
+      "bytes": 349788,
+      "gzipBytes": 108130
+    },
+    {
+      "path": "assets\\components-PxDcQDPa.css",
+      "bytes": 44038,
+      "gzipBytes": 8796
+    },
+    {
+      "path": "assets\\main-Ba_gf5JE.js",
+      "bytes": 285188,
+      "gzipBytes": 75805
+    },
+    {
+      "path": "assets\\main-CUq9JCEC.css",
+      "bytes": 30382,
+      "gzipBytes": 5625
+    },
+    {
+      "path": "assets\\panel-DKxWlKKD.js",
+      "bytes": 9585,
+      "gzipBytes": 3312
+    },
+    {
+      "path": "assets\\rolldown-runtime-W7wSyTde.js",
+      "bytes": 979,
+      "gzipBytes": 567
+    },
+    {
+      "path": "fonts\\inter-latin-variable.woff2",
+      "bytes": 352240,
+      "gzipBytes": 351777
+    },
+    {
+      "path": "fonts\\plus-jakarta-sans-latin-400.woff2",
+      "bytes": 11816,
+      "gzipBytes": 11839
+    },
+    {
+      "path": "fonts\\plus-jakarta-sans-latin-500.woff2",
+      "bytes": 12312,
+      "gzipBytes": 12335
+    },
+    {
+      "path": "fonts\\plus-jakarta-sans-latin-600.woff2",
+      "bytes": 12188,
+      "gzipBytes": 12211
+    },
+    {
+      "path": "fonts\\plus-jakarta-sans-latin-700.woff2",
+      "bytes": 12244,
+      "gzipBytes": 12267
+    },
+    {
+      "path": "icons\\icon128.png",
+      "bytes": 2747,
+      "gzipBytes": 2770
+    },
+    {
+      "path": "icons\\icon16.png",
+      "bytes": 339,
+      "gzipBytes": 362
+    },
+    {
+      "path": "icons\\icon32.png",
+      "bytes": 576,
+      "gzipBytes": 599
+    },
+    {
+      "path": "icons\\icon48.png",
+      "bytes": 850,
+      "gzipBytes": 873
+    }
+  ],
+  "apis": {}
+}

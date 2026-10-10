@@ -57,7 +57,16 @@ export function createApp(): express.Express {
   app.use("/api/billing", billingRouter);
   if (process.env.STATIC_DIR) {
     const staticDir = path.resolve(process.env.STATIC_DIR);
-    app.use(express.static(staticDir));
+    app.use(express.static(staticDir, {
+      setHeaders(res, filePath) {
+        // Only existing Vite content-hashed build assets are public/immutable.
+        // HTML, downloads, unhashed files and every API response stay no-store.
+        const relative = path.relative(staticDir, filePath).replace(/\\/g, "/");
+        if (/^assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2|png|jpg|jpeg|webp|avif|svg)$/.test(relative)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    }));
     // History-API fallback: non-API, extension-less GETs belong to the SPA,
     // so deep links and refreshes (/characters, /episodes/:id, …) serve
     // index.html. Real files (hashed assets, /download/*.zip) and any path

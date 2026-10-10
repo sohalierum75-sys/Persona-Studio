@@ -1,65 +1,25 @@
 import DeleteConfirmationDialog from "./components/ui/DeleteConfirmationDialog";
 import UpgradeDialog from "./components/auth/UpgradeDialog";
-import React, { useEffect } from "react";
-import { Routes, Route, Navigate, Outlet, useSearchParams } from "react-router-dom";
-import { useStudio } from "./store";
+import React, { lazy, Suspense, useEffect } from "react";
+import { Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth, initAuth, signInWithGoogle } from "./lib/auth";
 import { API_CONFIGURED, IS_EXTENSION } from "./lib/config";
-import StudioLayout from "./components/studio/StudioLayout";
-import CharactersPage from "./pages/CharactersPage";
-import CharacterEditorPage from "./pages/CharacterEditorPage";
-import EpisodePage from "./pages/EpisodePage";
-import WardrobePage from "./pages/WardrobePage";
-import LocationsPage from "./pages/LocationsPage";
-import HistoryPage from "./pages/HistoryPage";
-import SettingsPage from "./pages/SettingsPage";
-import AuthGate, { LoadingScreen, SignInScreen } from "./components/auth/AuthGate";
+const CharactersPage = lazy(() => import("./pages/CharactersPage"));
+const CharacterEditorPage = lazy(() => import("./pages/CharacterEditorPage"));
+const EpisodePage = lazy(() => import("./pages/EpisodePage"));
+const WardrobePage = lazy(() => import("./pages/WardrobePage"));
+const LocationsPage = lazy(() => import("./pages/LocationsPage"));
+const HistoryPage = lazy(() => import("./pages/HistoryPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+import { LoadingScreen, SignInScreen } from "./components/auth/AuthScreens";
 import HomePage from "./pages/HomePage";
-import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import TermsPage from "./pages/TermsPage";
-import RefundPolicyPage from "./pages/RefundPolicyPage";
-import PricingPage from "./pages/PricingPage";
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
 import { pendingCheckoutPlan } from "./lib/billing";
 
 // ─── Studio layout wrapper (layout route shared by all studio pages) ──────────
-
-function StudioRoot() {
-  const { loadAll, isLoaded, settings } = useStudio();
-
-  useEffect(() => { loadAll(); }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", settings.theme);
-    document.documentElement.setAttribute(
-      "data-reduced-motion",
-      settings.reducedMotion ? "true" : "false"
-    );
-  }, [settings]);
-
-  if (!isLoaded) {
-    return (
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        height: "100vh", background: "var(--bg-base)", color: "var(--text-muted)",
-        fontSize: 14,
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <div className="loading-mark" />
-          <p>Loading Persona Studio…</p>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
-  return (
-    <AuthGate>
-      <StudioLayout>
-        <Outlet />
-      </StudioLayout>
-    </AuthGate>
-  );
-}
 
 // ─── Root route — homepage for visitors, redirect for signed-in users ─────────
 
@@ -97,6 +57,8 @@ function RootRoute() {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
+const StudioRoot = lazy(() => import("./components/studio/StudioRoot"));
+
 let _authBootstrapped = false;
 
 export default function App() {
@@ -114,7 +76,7 @@ export default function App() {
     <>
     <UpgradeDialog />
     <DeleteConfirmationDialog />
-    <Routes>
+    <Suspense fallback={<LoadingScreen message="Loading Persona Studio?" />}><Routes>
       {/* Public homepage (unauthenticated) */}
       <Route path="/" element={<RootRoute />} />
 
@@ -137,7 +99,7 @@ export default function App() {
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </Routes></Suspense>
     </>
   );
 }

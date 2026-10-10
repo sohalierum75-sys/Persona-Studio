@@ -6,10 +6,23 @@ export function promptCount(data: any): number {
     : Array.isArray(data?.importedPrompts) ? data.importedPrompts.length : 0;
 }
 export async function getUsage(tx: Prisma.TransactionClient, userId: string) {
-  const rows = await tx.entity.findMany({ where: { userId, deletedAt: null, kind: { in: ["character", "episode", "scene"] } } });
+  // Count in PostgreSQL instead of transferring every prompt snapshot/image
+  // to Node. Keep promptCount's array precedence, including empty arrays.
+  const [usage] = await tx.$queryRaw<Array<{characters: bigint; episodes: bigint; prompts: bigint}>>`
+    SELECT count(*) FILTER (WHERE kind = 'character') AS characters,
+           count(*) FILTER (WHERE kind = 'episode') AS episodes,
+           coalesce(sum(CASE WHEN kind = 'scene' THEN
+             CASE WHEN jsonb_typeof(data->'prompts') = 'array' THEN jsonb_array_length(data->'prompts')
+                  WHEN jsonb_typeof(data->'importedPrompts') = 'array' THEN jsonb_array_length(data->'importedPrompts')
+                  ELSE 0 END
+             ELSE 0 END), 0)::bigint AS prompts
+    FROM "Entity"
+    WHERE "userId" = ${userId} AND "deletedAt" IS NULL
+      AND kind IN ('character', 'episode', 'scene')
+  `;
   return {
-    characters: rows.filter(r => r.kind === "character").length,
-    episodes: rows.filter(r => r.kind === "episode").length,
-    prompts: rows.filter(r => r.kind === "scene").reduce((n, r) => n + promptCount(r.data), 0),
+    characters: Number(usage.characters),
+    episodes: Number(usage.episodes),
+    prompts: Number(usage.prompts),
   };
 }

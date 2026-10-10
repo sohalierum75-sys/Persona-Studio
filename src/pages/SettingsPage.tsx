@@ -1,6 +1,5 @@
 ﻿import React, { useRef, useState } from "react";
 import { Moon, Sun, Archive, Download, Upload, CheckCircle2, AlertCircle } from "lucide-react";
-import JSZip from "jszip";
 import { useStudio } from "../store";
 import { dbGetAll, localMutations, type Mutation, DB_STORES, type StoreName } from "../db";
 import type { AppSettings, ContinuitySettings } from "../types";
@@ -179,6 +178,7 @@ function BackupRestoreCard() {
     setBusy("export");
     setStatus(null);
     try {
+      const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
       const manifest: Record<string, number> = {};
       for (const store of DB_STORES) {
@@ -223,6 +223,7 @@ function BackupRestoreCard() {
         exportedAt = backup.savedAt ?? backup.exportedAt;
         Object.assign(imported, backup.stores);
       } else {
+        const { default: JSZip } = await import("jszip");
         const zip = await JSZip.loadAsync(await file.arrayBuffer());
         const manifestFile = zip.file("manifest.json");
         if (!manifestFile) throw new Error("Not a Persona Studio backup");

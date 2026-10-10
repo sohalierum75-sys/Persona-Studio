@@ -53,7 +53,7 @@ export default function CharactersPage() {
             >
               <div className="character-portrait">
                 {getPortrait(c) ? (
-                  <img src={getPortrait(c)!} alt={`${c.name} portrait`} />
+                  <img loading="lazy" decoding="async" src={getPortrait(c)!} alt={`${c.name} portrait`} />
                 ) : (
                   <div className="character-portrait-placeholder">
                     <User size={48} style={{ opacity: 0.3 }} />

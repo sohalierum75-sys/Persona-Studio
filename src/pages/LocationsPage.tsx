@@ -62,7 +62,7 @@ export default function LocationsPage() {
               <div key={l.id} className="card" style={{ overflow: "hidden" }}>
                 <div style={{ aspectRatio: "16/9", background: "var(--bg-elevated)", position: "relative" }}>
                   {asset ? (
-                    <img src={asset.dataUrl} alt={l.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img loading="lazy" decoding="async" src={asset.dataUrl} alt={l.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{
                       width: "100%", height: "100%",
@@ -177,7 +177,7 @@ function NewLocationModal({ onClose }: { onClose: () => void }) {
             <label className="form-label">Reference image (optional)</label>
             {imageDataUrl ? (
               <div style={{ position: "relative", width: 120, height: 80 }}>
-                <img src={imageDataUrl} style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8 }} alt="location" />
+                <img loading="lazy" decoding="async" src={imageDataUrl} style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8 }} alt="location" />
                 <button className="btn btn-xs" style={{
                   position: "absolute", top: 2, right: 2,
                   background: "rgba(0,0,0,0.7)", color: "white",
