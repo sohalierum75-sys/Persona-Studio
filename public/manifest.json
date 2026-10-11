@@ -4,8 +4,18 @@
   "version": "1.2.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5MFJEwF8hiGyOVR6oD0Gx43tP3jQ3XFcv3cBNwDWjfUNioTQgmYWpqdXz4X6lNlTAs9Y1IZVZlcNwS8tkGy5y+r44Ftde2PvVdiuW+mug3M8WEJucmGNP1LsAY9uA83F4LVewPltYqbkX9n1B0oCpxgCwMpH1V7DC/SEVC3dC/kdN0MR17vMRqdbwRy8ObjV8jmfV3b068xB1Hp27fcmijGXBkuLb6ewxVCyT+1EYQaBYt5iODqYl2U7cP8ObchipdgAKoR3NKsqefdP4KAvvQ+pZJGPKgPRFzx+VdXjdTzpvsWiExKUVZq87UTFIHFHH73J+juZSGtnT/eIIvj0iQIDAQAB",
   "description": "One character. Every scene. A character workspace for AI-influencer and recurring-character creators.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
-    "default_title": "Open Persona Studio floating panel"
+    "default_title": "Open Persona Studio floating panel",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
   },
   "permissions": [
     "storage",

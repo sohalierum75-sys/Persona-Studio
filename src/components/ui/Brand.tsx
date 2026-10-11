@@ -1,4 +1,4 @@
-/** Shared, original Persona Studio monogram. */
+/** Shared, original Persona Studio mark: white P monogram on a blue→violet tile. */
 export default function Brand({ compact = false }: { compact?: boolean }) {
-  return <span className="brand"><svg className="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="26" rx="7" fill="currentColor"/><path d="M14 9h8a7 7 0 0 1 0 14h-8V9Z" fill="var(--bg-base)"/><path d="M17 12h5a4 4 0 0 1 0 8h-5v-8Z" fill="currentColor"/></svg>{!compact && <span>Persona <span className="brand-studio">Studio</span></span>}</span>;
+  return <span className="brand"><svg className="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="ps-tile" x1="5" y1="2" x2="27" y2="30" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#12A8FF"/><stop offset=".55" stopColor="#4C6BFF"/><stop offset="1" stopColor="#8A3FFF"/></linearGradient></defs><rect width="32" height="32" rx="8.5" fill="url(#ps-tile)"/><path fill="#fff" d="M11.25 6.5h5.75a6.25 6.25 0 0 1 0 12.5h-3.25v4a2.5 2.5 0 0 1-5 0V9a2.5 2.5 0 0 1 2.5-2.5Z"/><path fill="url(#ps-tile)" d="M17 9.45a3.3 3.3 0 0 1 0 6.6h-3.25v-6.6H17Z"/></svg>{!compact && <span>Persona <span className="brand-studio">Studio</span></span>}</span>;
 }
