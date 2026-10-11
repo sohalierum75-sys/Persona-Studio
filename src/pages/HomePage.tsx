@@ -7,14 +7,17 @@ import {
 import Brand from "../components/ui/Brand";
 import PricingSection from "../components/home/PricingSection";
 import { PRIMARY_GENERATORS, formatGeneratorPrompt, type GeneratorId } from "../utils/generators";
-import mayaPortrait from "../assets/home/maya-portrait.webp";
-import mayaAvatar from "../assets/home/maya-avatar.webp";
-import sceneFlowerShop from "../assets/home/scene-flower-shop.webp";
-import sceneRooftopGarden from "../assets/home/scene-rooftop-garden.webp";
-import sceneNightMarket from "../assets/home/scene-night-market.webp";
-import outfitMustardDress from "../assets/home/outfit-mustard-dress.webp";
-import outfitSkyBlueTop from "../assets/home/outfit-sky-blue-top.webp";
-import outfitEmeraldTank from "../assets/home/outfit-emerald-tank.webp";
+
+// Homepage imagery is served from `public/homepageimage` so the files ship
+// with every build and keep a stable path in production.
+const mayaPortrait = "/homepageimage/maya-portrait.webp";
+const mayaAvatar = "/homepageimage/maya-avatar.webp";
+const sceneFlowerShop = "/homepageimage/scene-flower-shop.webp";
+const sceneRooftopGarden = "/homepageimage/scene-rooftop-garden.webp";
+const sceneNightMarket = "/homepageimage/scene-night-market.webp";
+const outfitMustardDress = "/homepageimage/outfit-mustard-dress.webp";
+const outfitSkyBlueTop = "/homepageimage/outfit-sky-blue-top.webp";
+const outfitEmeraldTank = "/homepageimage/outfit-emerald-tank.webp";
 import type { Location, Outfit, Scene } from "../types";
 import "./HomePage.css";
 
