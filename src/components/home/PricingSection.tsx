@@ -1,7 +1,7 @@
 /**
  * Pricing — lifetime deal (first 50, server-enforced) and monthly plan.
  *
- * Buttons connect to real Paddle checkouts through the API
+ * Buttons connect to real Dodo Payments checkouts through the API
  * (POST /api/billing/checkout requires sign-in, so the purchase can be
  * attributed). No countdowns, no decorative urgency: the claimed counter
  * is the server's real number, and unavailability is stated as such.
@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Check } from "lucide-react";
 import { useAuth, signInWithGoogle, initAuth } from "../../lib/auth";
-import { openPaddleCheckout } from "../../lib/paddle-checkout";
+
 import {
   fetchBillingPlans, fetchEntitlements, startCheckout,
   pendingCheckoutPlan, saveCheckoutPlan, requireCheckoutConfiguration,
@@ -73,7 +73,7 @@ export default function PricingSection() {
     setBusy(plan);
     setNotice("");
     try {
-      const config = await requireCheckoutConfiguration();
+      await requireCheckoutConfiguration();
       let authenticated = signedIn;
       if (!authenticated && auth.status === "error") {
         // "error" can hide a still-valid stored session (e.g. a failed OAuth
@@ -93,7 +93,8 @@ export default function PricingSection() {
         return;
       }
       const { url } = await startCheckout(plan);
-      await openPaddleCheckout(url, config, auth.user?.email);
+      saveCheckoutPlan(null);
+      window.location.assign(url);
     } catch (err) {
       console.error(`[checkout] could not start ${plan} checkout:`, err);
       setNotice(err instanceof Error ? err.message : "Checkout could not be started.");
@@ -124,23 +125,7 @@ export default function PricingSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn]);
 
-  // Paddle's payment links can also be opened directly (including from emails).
-  useEffect(() => {
-    if (!params.has("_ptxn")) return;
-    const target = new URL(window.location.href);
-    if (!target.searchParams.has("_ptxn")) return;
-    const paymentUrl = target.href;
-    saveCheckoutPlan(null);
-    target.searchParams.delete("_ptxn");
-    target.searchParams.set("pricing", "1");
-    window.history.replaceState(window.history.state, "", target.pathname + target.search);
-    navigate(target.pathname + target.search, { replace: true });
-    void requireCheckoutConfiguration()
-      .then(config => openPaddleCheckout(paymentUrl, config))
-      .catch(error => setNotice(error instanceof Error ? error.message : "Checkout could not be started."));
-  }, [params, navigate]);
-
-  // Post-payment confirmation (?checkout=success from Paddle).
+  // Post-payment confirmation (?checkout=success from Dodo Payments).
   useEffect(() => {
     if (params.get("checkout") !== "success") return;
     if (!signedIn) { setConfirmation("signed-out"); return; }
@@ -238,7 +223,7 @@ export default function PricingSection() {
     {(notice || auth.error) && <p className="hp-pricing-notice" role="alert">{notice || auth.error}</p>}
     <p className="hp-pricing-fineprint">
       Checkout and payments are handled by{" "}
-      <a href="https://www.paddle.com" target="_blank" rel="noopener noreferrer">Paddle</a>
+      <a href="https://dodopayments.com" target="_blank" rel="noopener noreferrer">Dodo Payments</a>
       {" "}&mdash; Merchant of Record. Prices in USD.{" "}
       <a href="/terms">Terms</a> &middot; <a href="/refund-policy">Refund Policy</a> &middot; <a href="/privacy-policy">Privacy</a>
     </p>

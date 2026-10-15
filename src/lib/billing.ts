@@ -2,7 +2,7 @@
  * Billing client — plan availability, entitlements and checkout.
  *
  * The server owns everything sensitive: the client only ever receives
- * a hosted Paddle checkout URL from an authenticated call, and
+ * a hosted Dodo Payments checkout URL from an authenticated call, and
  * paid access is granted server-side after webhook verification.
  */
 
@@ -20,7 +20,6 @@ const INTENT_KEY = "ps_billing_intent";
 
 export function pendingCheckoutPlan(): BillingPlan | null {
   const params = new URL(window.location.href).searchParams;
-  if (params.has("_ptxn")) return null;
   const marker = params.get("checkout");
   if (marker !== null) return marker === "lifetime" || marker === "monthly" ? marker : null;
   try {
@@ -45,18 +44,14 @@ export async function requireCheckoutConfiguration(): Promise<BillingPlansInfo> 
   if (!plans.configured || plans.missingVariables?.length) {
     throw new Error(plans.missingVariables?.length
       ? `Checkout setup incomplete. Set these server environment variables: ${plans.missingVariables.join(", ")}.`
-      : "Paddle checkout is not configured. Please contact support or try again later.");
-  }
-  if (plans.environment && !plans.clientToken?.startsWith(plans.environment === "sandbox" ? "test_" : "live_")) {
-    throw new Error("Paddle checkout is not configured. Set PADDLE_CLIENT_TOKEN to a client-side token for the selected Paddle environment.");
+      : "Dodo Payments checkout is not configured. Please contact support or try again later.");
   }
   return plans;
 }
 
 export interface BillingPlansInfo {
   configured: boolean;
-  environment?: "sandbox" | "production";
-  clientToken?: string | null;
+  environment?: "test_mode" | "live_mode";
   missingVariables?: string[];
   lifetime: {
     limit: number;
@@ -84,15 +79,18 @@ export async function fetchBillingPlans(): Promise<BillingPlansInfo | null> {
   }
 }
 
-/** Start checkout for a signed-in user; resolves to the Paddle checkout URL. */
+/** Start checkout for a signed-in user; resolves to the Dodo Payments checkout URL. */
 export async function startCheckout(plan: BillingPlan): Promise<{ url: string }> {
   try {
     const result = await apiFetch<{ url?: unknown }>("/api/billing/checkout", { method: "POST", body: { plan } });
     if (typeof result?.url !== "string" || !/^https:\/\//i.test(result.url)) {
-      throw new Error("Checkout server did not return a valid checkout URL. Please check the Paddle checkout configuration.");
+      throw new Error("Checkout server did not return a valid checkout URL. Please check the Dodo Payments checkout configuration.");
     }
-    try { new URL(result.url); } catch {
-      throw new Error("Checkout server did not return a valid checkout URL. Please check the Paddle checkout configuration.");
+    try {
+      const target = new URL(result.url);
+      if (target.username || target.password || !["checkout.dodopayments.com", "test.checkout.dodopayments.com"].includes(target.hostname)) throw new Error();
+    } catch {
+      throw new Error("Checkout server did not return a valid checkout URL. Please check the Dodo Payments checkout configuration.");
     }
     return { url: result.url };
   } catch (err) {

@@ -109,3 +109,7 @@ Backend tests require an accessible PostgreSQL URL in `server/.env` whose role m
 Tests cover Google callbacks with mocked provider responses, repeat identity mapping, PKCE/code replay, isolation via direct requests, image privacy/validation, concurrent version checks, bulk retry/order/deletion, refresh rotation, IndexedDB queue persistence, in-flight edits, account switching, browser restart, the real extension, and legacy import/retry. Real Google consent/account selection and production hosting require your external configuration and a live acceptance test. Docker deployment itself needs Docker available on the target host.
 
 For local API-only testing without Google, `ALLOW_TEST_LOGIN=true` enables `POST /api/auth/test-login` with an email. This endpoint is unavailable in production and is not exposed as a login button. Never enable it on a publicly reachable development server.
+
+## Dodo Payments
+
+Billing uses server-created Dodo hosted checkout ($39 lifetime, first 50; $9/month). Follow [the payment migration and deployment guide](deploy/DODO_PAYMENTS.md) before enabling payments. Credentials, products, and webhook configuration are required; a successful build does not mean live payments are configured.

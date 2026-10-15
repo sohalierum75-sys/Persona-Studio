@@ -33,3 +33,6 @@ playwright-report/
 test-results/
 .local-postgres/
 .verify-imgs/
+
+# Isolated local verification tools and database (not deployed).
+.test-tools/

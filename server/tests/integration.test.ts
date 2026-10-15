@@ -202,10 +202,10 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
   const env={...process.env,VITE_API_URL:base};
   // Build the actual extension with this test API URL.
   execFileSync(process.execPath,["node_modules/vite/bin/vite.js","build"],{cwd:root,env,stdio:"pipe"});
-  const vite=spawn(process.execPath,["node_modules/vite/bin/vite.js","--host","127.0.0.1","--port","5178","--strictPort"],{cwd:root,env,stdio:"pipe",windowsHide:true});
+  const vite=spawn(process.execPath,["node_modules/vite/bin/vite.js","--host","127.0.0.1","--port","5178","--strictPort"],{cwd:root,env,stdio:["ignore","ignore","inherit"],windowsHide:true});
   const studioProfile=fs.mkdtempSync(path.join(os.tmpdir(),"persona-studio-test-"));
   const extensionProfile=fs.mkdtempSync(path.join(os.tmpdir(),"persona-extension-test-"));
-  const installed=path.join(process.env.LOCALAPPDATA ?? "", "ms-playwright/chromium-1217/chrome-win64/chrome.exe");
+  const installed=chromium.executablePath();
   const executablePath=process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ?? (fs.existsSync(installed)?installed:undefined);
   let studio:any,extension:any;
   try{
@@ -213,7 +213,11 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     const session=(await request("/api/auth/test-login",undefined,{email:"browser@example.test"})).json;
     studio=await chromium.launchPersistentContext(studioProfile,{headless:true,executablePath});
     let page=await studio.newPage();
-    await page.goto("http://127.0.0.1:5178/characters");
+    page.on("console", (m:any) => console.log("[Studio console]", m.type(), m.text()));
+    page.on("pageerror", (e:any) => console.log("[Studio pageerror]", e.message));
+    page.on("dialog", (d:any) => { console.log("[Studio dialog]", d.message()); void d.dismiss(); });
+    page.setDefaultTimeout(60000);
+    await page.goto("http://127.0.0.1:5178/characters", { timeout: 60000 });
     await page.getByRole("button",{name:"Continue with Google"}).waitFor();
     await page.evaluate((s:any)=>localStorage.setItem("ps_auth_tokens",JSON.stringify(s)),session);
     await page.reload();
@@ -223,9 +227,16 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     await page.getByRole("button",{name:"Create Character",exact:true}).click();
     // The async quota check completes before the first sync state transition.
     // Waiting only for "synced" can observe the previous idle state.
-    await page.waitForFunction(async()=>{const {useStudio}=await import("/src/store/index.ts");return useStudio.getState().characters.some((c:any)=>c.name==="Browser Mira");});
-    await page.waitForFunction(async()=>{const {getSyncState}=await import("/src/lib/sync.ts");return getSyncState().status==="synced";});
-    const c=await page.evaluate(async()=>{const {useStudio}=await import("/src/store/index.ts");return useStudio.getState().characters.find((c:any)=>c.name==="Browser Mira");});
+    let c:any;
+    for(let n=0;n<40;n++){
+      c=await page.evaluate(async()=>{
+        try{const {useStudio}=await import("/src/store/index.ts");return useStudio.getState().characters.find((x:any)=>x.name==="Browser Mira");}catch{return null;}
+      });
+      if(c)break;
+      await new Promise(r=>setTimeout(r,250));
+    }
+    // Character found; wait for sync and empty queue below
+    // c already resolved above
     assert.ok(c);
     await page.waitForFunction(async()=>{const {getSyncState}=await import("/src/lib/sync.ts");const {getPending}=await import("/src/lib/queue.ts");const {currentAccount}=await import("/src/db/index.ts");return getSyncState().status==="synced" && (await getPending(currentAccount()!)).length===0;});
     let saved=false;
@@ -258,7 +269,10 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     await extensionStudio.getByRole("button",{name:"New Character",exact:true}).first().click();
     await extensionStudio.getByLabel("Character name *").fill("Created in extension");
     await extensionStudio.getByRole("button",{name:"Create Character",exact:true}).click();
-    await extensionStudio.getByText("Synced",{exact:true}).first().waitFor();
+    await extensionStudio.getByLabel("Character name *").waitFor({state:"detached"});
+    let extSaved=false;
+    for(let n=0;n<40;n++){extSaved=(await request("/api/sync",session.accessToken)).json.records.some((r:any)=>r.data?.name==="Created in extension");if(extSaved)break;await new Promise(r=>setTimeout(r,250));}
+    assert.ok(extSaved,"Character created in extension must be confirmed on server");
     await page.reload();
     await page.getByText("Created in extension",{exact:true}).first().waitFor({state:"attached"});
 
@@ -299,7 +313,7 @@ test("browser Studio and real extension sync, offline restart, conflict and migr
     let interrupted=false;
     await page.route("**/api/sync/ops",async(route:any)=>{
       const payload=route.request().postDataJSON();
-      if(!interrupted && payload.ops[0]?.opId?.startsWith("migration:characters:")){interrupted=true;await route.abort();}else await route.continue();
+      if(!interrupted && payload.ops?.some((op:any)=>op.opId?.startsWith("migration:characters:"))){interrupted=true;await route.abort();}else await route.continue();
     });
     const failed=await page.evaluate(async(id:string)=>{const {importLocalProjects}=await import("/src/lib/migration.ts");try{await importLocalProjects(id,()=>{});return false;}catch{return true;}},session.user.id);
     assert.ok(failed && interrupted,"Migration must retain its checkpoint after a network failure");

@@ -37,7 +37,7 @@ export function createApp(): express.Express {
 
   app.use((_req, res, next) => { res.setHeader("Cache-Control", "no-store"); res.setHeader("X-Content-Type-Options", "nosniff"); res.setHeader("Referrer-Policy", "no-referrer"); next(); });
 
-  // Paddle webhook — mounted BEFORE the JSON parser: signature
+  // Dodo Payments webhook — mounted BEFORE the JSON parser: signature
   // verification needs the raw request bytes, and this router terminates
   // the request so the global parser never touches it.
   app.use("/api/billing/webhook", express.raw({ type: "*/*", limit: "256kb" }), billingWebhookRouter);
@@ -74,7 +74,7 @@ export function createApp(): express.Express {
     app.use((req, res, next) => {
       if (req.method !== "GET" && req.method !== "HEAD") return next();
       if (req.path.startsWith("/api/") || /\.[a-zA-Z0-9]+$/.test(req.path) || !req.accepts("html")) return next();
-      res.sendFile(path.join(staticDir, "index.html"));
+      res.sendFile("index.html", { root: staticDir });
     });
   }
 

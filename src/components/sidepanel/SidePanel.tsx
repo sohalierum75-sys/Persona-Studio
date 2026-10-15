@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { ExternalLink, Copy, Check, User, ChevronRight, AlertTriangle, Settings2, ChevronDown, ChevronUp } from "lucide-react";
+import { ExternalLink, Copy, Check, User, AlertTriangle, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { useStudio } from "../../store";
 import { formatGeneratorPrompt } from "../../utils/generators";
 import { useGeneratorSelection } from "../../hooks/useGeneratorSelection";
 import GeneratorTabs from "../studio/GeneratorTabs";
 import GeneratorOptions from "../studio/GeneratorOptions";
-import type { Scene } from "../../types";
 import AuthGate from "../auth/AuthGate";
 import SyncStatus from "../auth/SyncStatus";
 import AccountMenu from "../auth/AccountMenu";
@@ -64,7 +63,6 @@ function SidePanelInner() {
 
   const activeCharacter = characters.find((c) => c.id === activeCharacterId);
   const characterEpisodes = episodes.filter((e) => e.characterId === activeCharacterId);
-  const activeEpisode = characterEpisodes.find((e) => e.id === activeEpisodeId);
   const episodeScenes = scenes
     .filter((s) => s.episodeId === activeEpisodeId)
     .sort((a, b) => a.order - b.order);
@@ -85,8 +83,10 @@ function SidePanelInner() {
   })();
 
   function openStudio() {
-    // In extension context, open the studio in a new tab
-    if (typeof chrome !== "undefined" && chrome.tabs) {
+    // In extension context, ask service worker to open the studio tab
+    if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+      void chrome.runtime.sendMessage({ type: "persona:open-studio" });
+    } else if (typeof chrome !== "undefined" && chrome.tabs?.create) {
       chrome.tabs.create({ url: chrome.runtime.getURL("index.html") });
     } else {
       // Dev fallback: open in a new window/tab

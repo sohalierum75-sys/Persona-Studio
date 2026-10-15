@@ -139,11 +139,11 @@ test('stale callback code keeps the session and still resumes checkout once', as
     checkouts++;
     assert.deepEqual(route.request().postDataJSON(), { plan: 'monthly' });
     assert.equal(route.request().headers().authorization, 'Bearer test-access');
-    return route.fulfill({ json: { url: 'https://sandbox-checkout.paddle.com/checkout/resumed' } });
+    return route.fulfill({ json: { url: 'https://test.checkout.dodopayments.com/session/resumed' } });
   });
-  await page.route('https://sandbox-checkout.paddle.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
+  await page.route('https://test.checkout.dodopayments.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
   await page.goto(origin + '/?checkout=monthly&code=stale-code');
-  await page.waitForURL('https://sandbox-checkout.paddle.com/checkout/resumed');
+  await page.waitForURL('https://test.checkout.dodopayments.com/session/resumed');
   assert.equal(checkouts, 1);
 });
 
@@ -155,12 +155,12 @@ for (const plan of ['lifetime', 'monthly']) {
     await page.route('**/api/billing/checkout', route => {
       assert.equal(route.request().headers().authorization, 'Bearer test-access');
       assert.deepEqual(route.request().postDataJSON(), { plan });
-      return route.fulfill({ json: { url: `https://sandbox-checkout.paddle.com/checkout/${plan}` } });
+      return route.fulfill({ json: { url: `https://test.checkout.dodopayments.com/session/${plan}` } });
     });
-    await page.route('https://sandbox-checkout.paddle.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
+    await page.route('https://test.checkout.dodopayments.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
     await page.goto(origin + '/?pricing=1');
     await page.locator(`#pricing-${plan}-cta`).click();
-    await page.waitForURL(`https://sandbox-checkout.paddle.com/checkout/${plan}`);
+    await page.waitForURL(`https://test.checkout.dodopayments.com/session/${plan}`);
   });
 }
 
@@ -168,10 +168,10 @@ test('checkout setup error is visible without claiming payment', async t => {
   const { page } = await pageFor(t);
   await page.goto(origin);
   await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
-  await page.route('**/api/billing/checkout', route => route.fulfill({ status: 503, json: { error: 'Checkout setup incomplete. Set these server environment variables: PADDLE_API_KEY.' } }));
+  await page.route('**/api/billing/checkout', route => route.fulfill({ status: 503, json: { error: 'Checkout setup incomplete. Set these server environment variables: DODO_PAYMENTS_API_KEY.' } }));
   await page.goto(origin + '/?pricing=1');
   await page.locator('#pricing-lifetime-cta').click();
-  await page.getByRole('alert').filter({ hasText: 'PADDLE_API_KEY' }).waitFor();
+  await page.getByRole('alert').filter({ hasText: 'DODO_PAYMENTS_API_KEY' }).waitFor();
   assert.equal(new URL(page.url()).origin, origin);
   await page.goto(origin + '/?checkout=success');
   await page.getByText('Checking your access. Payment confirmation may take a few seconds.').waitFor();
@@ -197,11 +197,11 @@ test(`${plan} purchase from ${path} survives Google sign-in and resumes once`, a
     assert.equal(new URL(page.url()).pathname, path);
     assert.equal(route.request().headers().authorization, 'Bearer test-access');
     assert.deepEqual(route.request().postDataJSON(), { plan });
-    return route.fulfill({ json: { url: 'https://sandbox-checkout.paddle.com/checkout/resumed' } });
+    return route.fulfill({ json: { url: 'https://test.checkout.dodopayments.com/session/resumed' } });
   });
-  await page.route('https://sandbox-checkout.paddle.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
+  await page.route('https://test.checkout.dodopayments.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Hosted checkout' }));
   await page.goto(origin + path + '?checkout=' + plan + '&code=test-code');
-  await page.waitForURL('https://sandbox-checkout.paddle.com/checkout/resumed');
+  await page.waitForURL('https://test.checkout.dodopayments.com/session/resumed');
   assert.equal(checkouts, 1);
   await page.goBack();
   await page.locator(`#pricing-${plan}-cta`).waitFor();
@@ -234,20 +234,19 @@ for (const source of ['url', 'storage']) test(`checkout resumes with ${source} i
 
 for (const failure of [
   { name: 'missing config endpoint', endpoint: 'config', status: 404, body: 'Not found', message: /config endpoint is missing/ },
-  { name: 'unconfigured Paddle', endpoint: 'config', json: { configured: false }, message: /Paddle checkout is not configured/ },
-  { name: 'missing variables', endpoint: 'config', json: { configured: false, missingVariables: ['PADDLE_API_KEY'] }, message: /PADDLE_API_KEY/ },
-  { name: 'missing client token', endpoint: 'config', json: { configured: true, environment: 'sandbox' }, message: /PADDLE_CLIENT_TOKEN/ },
-  { name: 'wrong environment token', endpoint: 'config', json: { configured: true, environment: 'sandbox', clientToken: 'live_wrong' }, message: /PADDLE_CLIENT_TOKEN/ },
+  { name: 'unconfigured Dodo Payments', endpoint: 'config', json: { configured: false }, message: /Dodo Payments checkout is not configured/ },
+  { name: 'missing variables', endpoint: 'config', json: { configured: false, missingVariables: ['DODO_PAYMENTS_API_KEY'] }, message: /DODO_PAYMENTS_API_KEY/ },
   { name: 'missing checkout endpoint', endpoint: 'checkout', status: 404, body: 'Not found', message: /Checkout endpoint.*missing/ },
   { name: 'SPA fallback', endpoint: 'checkout', body: '<html>App</html>', message: /Checkout endpoint.*invalid response/ },
   { name: 'missing checkout URL', endpoint: 'checkout', json: {}, message: /valid checkout URL/ },
   { name: 'unsafe checkout URL', endpoint: 'checkout', json: { url: 'javascript:alert(1)' }, message: /valid checkout URL/ },
+  { name: 'unexpected checkout host', endpoint: 'checkout', json: { url: 'https://evil.example/checkout' }, message: /valid checkout URL/ },
   { name: 'malformed checkout URL', endpoint: 'checkout', json: { url: 'https://' }, message: /valid checkout URL/ },
 ]) test(`checkout shows ${failure.name} and remains on pricing`, async t => {
   const { page } = await pageFor(t);
   await page.goto(origin);
   await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
-  const { name, endpoint, message, ...response } = failure;
+  const { name: _name, endpoint, message, ...response } = failure;
   await page.route(`**/api/billing/${endpoint}`, route => route.fulfill(response));
   await page.goto(origin + '/?pricing=1');
   await page.locator('#pricing-monthly-cta').click();
@@ -255,83 +254,6 @@ for (const failure of [
   assert.match(await page.getByRole('alert').innerText(), message);
   assert.equal(new URL(page.url()).pathname, '/');
   assert.equal(await page.locator('#pricing-monthly-cta').isEnabled(), true);
-});
-
-async function mockPaddle(page) {
-  await page.route('**/api/billing/config', route => route.fulfill({ json: {
-    configured: true, environment: 'sandbox', clientToken: 'test_public_token',
-    lifetime: { limit: 50, claimed: 0, remaining: 50 },
-  } }));
-  await page.route('https://cdn.paddle.com/paddle/v2/paddle.js', route => route.fulfill({
-    contentType: 'application/javascript', body: `window.paddleCalls = [];
-      window.Paddle = {
-        Environment: { set: value => window.paddleCalls.push(['environment', value]) },
-        Initialize: value => window.paddleCalls.push(['initialize', value]),
-        Checkout: { open: value => window.paddleCalls.push(['open', value]) }
-      };`,
-  }));
-}
-
-for (const plan of ['lifetime', 'monthly']) for (const mode of ['signed-in', 'oauth']) {
-  test(`${plan} opens Sandbox overlay after ${mode}`, async t => {
-    const { page } = await pageFor(t);
-    await mockPaddle(page);
-    await page.goto(origin);
-    await page.evaluate(({ saved, mode }) => {
-      if (mode === 'signed-in') localStorage.setItem('ps_auth_tokens', JSON.stringify(saved));
-      else sessionStorage.setItem('ps_pkce', 'v'.repeat(43));
-    }, { saved: session(), mode });
-    let checkouts = 0;
-    await page.route('**/api/billing/checkout', route => {
-      checkouts++;
-      assert.deepEqual(route.request().postDataJSON(), { plan });
-      assert.equal(route.request().headers().authorization, 'Bearer test-access');
-      return route.fulfill({ json: { url: `https://studio.example/pricing?_ptxn=txn_${plan}` } });
-    });
-    await page.goto(origin + (mode === 'oauth' ? `/?checkout=${plan}&code=test-code` : '/?pricing=1'));
-    if (mode === 'signed-in') await page.locator(`#pricing-${plan}-cta`).click();
-    await page.waitForFunction(() => window.paddleCalls?.some(([name]) => name === 'open'));
-    assert.deepEqual(await page.evaluate(() => window.paddleCalls), [
-      ['environment', 'sandbox'],
-      ['initialize', { token: 'test_public_token', checkout: { settings: { successUrl: origin + '/?checkout=success' } } }],
-      ['open', { transactionId: `txn_${plan}`, customer: { email: user.email } }],
-    ]);
-    assert.equal(new URL(page.url()).pathname, '/');
-    assert.equal(checkouts, 1);
-  });
-}
-
-test('direct Paddle payment link opens once without creating another transaction', async t => {
-  const { page } = await pageFor(t);
-  await mockPaddle(page);
-  let checkouts = 0;
-  await page.route('**/api/billing/checkout', route => { checkouts++; return route.abort(); });
-  await page.goto(origin);
-  await page.evaluate(saved => {
-    localStorage.setItem('ps_auth_tokens', JSON.stringify(saved));
-    sessionStorage.setItem('ps_billing_intent', 'monthly');
-  }, session());
-  await page.goto(origin + '/pricing?_ptxn=txn_existing');
-  await page.waitForFunction(() => window.paddleCalls?.some(([name]) => name === 'open'));
-  assert.deepEqual(await page.evaluate(() => window.paddleCalls.filter(([name]) => name === 'open')), [
-    ['open', { transactionId: 'txn_existing' }],
-  ]);
-  assert.equal(checkouts, 0);
-});
-
-test('Paddle script failure shows a checkout error and allows retry', async t => {
-  const { page } = await pageFor(t);
-  await mockPaddle(page);
-  await page.route('https://cdn.paddle.com/paddle/v2/paddle.js', route => route.abort());
-  await page.goto(origin);
-  await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
-  await page.route('**/api/billing/checkout', route => route.fulfill({ json: { url: 'https://studio.example/pricing?_ptxn=txn_retry' } }));
-  await page.goto(origin + '/?checkout=monthly');
-  await page.getByRole('alert').filter({ hasText: 'Paddle checkout could not load' }).waitFor();
-  assert.equal(new URL(page.url()).pathname, '/');
-  await mockPaddle(page);
-  await page.locator('#pricing-monthly-cta').click();
-  await page.waitForFunction(() => window.paddleCalls?.some(([name]) => name === 'open'));
 });
 
 test('account shows identity, usage, sync and actions; Escape restores focus', async t => {

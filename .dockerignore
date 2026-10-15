@@ -8,3 +8,5 @@ server/.env*
 backups
 test-results
 .verify-imgs
+.test-tools
+.checkout-verify.local

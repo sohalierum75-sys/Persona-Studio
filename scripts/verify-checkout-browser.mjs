@@ -4,7 +4,7 @@
 // Plan 1 (lifetime) exercises the full OAuth return path: pricing CTA →
 // /api/auth/google/start with ?checkout=lifetime → Google → callback back to
 // /pricing → session exchange → automatic resume → POST /api/billing/checkout
-// exactly once → Paddle Sandbox overlay opens.
+// exactly once → Dodo Payments hosted test checkout opens.
 //
 // Plan 2 (monthly) reuses the same signed-in context and exercises the
 // signed-in CTA path on production.
@@ -30,7 +30,7 @@ page.on('response', response => {
 page.on('framenavigated', frame => {
   const url = new URL(frame.url() || 'about:blank');
   if (frame === page.mainFrame() && url.origin === SITE && url.pathname === '/characters' && !events.checkoutCalls.length) events.workspaceBeforeCheckout = true;
-  if (url.hostname.endsWith('.paddle.com') && url.hostname.includes('checkout')) events.sandboxNavigations.push(url.hostname);
+  if (url.hostname.endsWith('.dodopayments.com') && url.hostname.includes('checkout')) events.sandboxNavigations.push(url.hostname);
 });
 
 async function waitForCheckout(plan, deadlineMs) {
@@ -39,11 +39,11 @@ async function waitForCheckout(plan, deadlineMs) {
   while (Date.now() < deadline && !page.isClosed()) {
     if (events.checkoutCalls.filter(p => p === plan).length > started && events.sandboxNavigations.length) return null;
     const alerts = await page.getByRole('alert').allTextContents().catch(() => []);
-    const fatal = alerts.find(text => /checkout|PADDLE_|endpoint|sign-in failed/i.test(text));
+    const fatal = alerts.find(text => /checkout|DODO_|endpoint|sign-in failed/i.test(text));
     if (fatal) return fatal;
     await page.waitForTimeout(1000);
   }
-  return page.isClosed() ? 'browser was closed' : 'timed out waiting for the Paddle Sandbox checkout';
+  return page.isClosed() ? 'browser was closed' : 'timed out waiting for the Dodo Payments Sandbox checkout';
 }
 
 const report = [];
@@ -51,7 +51,7 @@ try {
   await page.goto(`${SITE}/pricing`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.locator('#pricing-lifetime-cta').waitFor({ timeout: 60000 });
   await page.locator('#pricing-lifetime-cta').click();
-  console.log('LIFETIME: complete Google sign-in in the opened window. The Paddle Sandbox checkout must open by itself — do not pay.');
+  console.log('LIFETIME: complete Google sign-in in the opened window. The Dodo Payments Sandbox checkout must open by itself — do not pay.');
 
   const lifetimeStop = await waitForCheckout('lifetime', 300000);
   const lifetimeCalls = events.checkoutCalls.filter(p => p === 'lifetime').length;

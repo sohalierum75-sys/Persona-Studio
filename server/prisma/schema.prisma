@@ -30,14 +30,14 @@ model User {
   authCodes     AuthCode[]
   entities      Entity[]
 
-  // ── Billing (granted only by verified Paddle webhooks) ──
+  // ── Billing (granted only by verified payment webhooks) ──
   /// Set when a verified webhook grants the one-time (lifetime) purchase
   lifetimeAt          DateTime?
-  /// Latest Paddle subscription state: active | trialing | canceled | past_due | paused
+  /// Latest provider subscription state: active | trialing | canceled | past_due | paused
   subscriptionStatus  String?
   /// End of the current paid billing period — access continues until this date after cancel
   subscriptionEndsAt  DateTime?
-  /// Paddle subscription id (unique per user)
+  /// Provider subscription id (unique per user)
   subscriptionId      String?   @unique
   purchases           Purchase[]
 }
@@ -119,10 +119,10 @@ model EntityVersion {
 
 /// One row per paid order or subscription. Written only by verified webhooks;
 /// doubles as the ledger the lifetime-deal limit counts against.
-/// `provider` = "paddle" for new records; "lemonsqueezy" for historic LS records.
+/// New records use "dodo"; historical provider values are retained.
 model Purchase {
   id                     String   @id @default(uuid())
-  provider               String   @default("paddle")
+  provider               String   @default("dodo")
   /// lifetime | monthly
   kind                   String
   /// granted | limit_reached | refunded | unmatched
@@ -146,10 +146,57 @@ model Purchase {
 }
 
 /// Every verified webhook event, keyed for idempotency (retries are ignored).
-/// For Paddle, `id` = event_id from the notification payload.
+/// For Dodo, id is namespaced by environment and signed webhook-id header.
 model BillingEvent {
   id        String   @id
   eventName String
   payload   Json
   createdAt DateTime @default(now())
+}
+
+/// Durable checkout reservations. Never time-expire a payable hosted checkout.
+model BillingCheckout {
+  id String @id @default(uuid())
+  userId String
+  plan String
+  productId String
+  environment String
+  sessionId String? @unique
+  url String?
+  status String @default("reserved")
+  createdAt DateTime @default(now())
+  @@index([userId, plan, environment])
+  @@index([plan, status])
+}
+
+/// Dodo state is separate from historical purchases; no legacy IDs are rewritten.
+model DodoSubscription {
+  id String @id
+  userId String
+  productId String
+  status String
+  periodStart DateTime
+  periodEnd DateTime
+  eventAt DateTime
+  @@index([userId])
+}
+
+model DodoPayment {
+  id String @id
+  userId String
+  kind String
+  subscriptionId String?
+  amount Int
+  currency String
+  paidAt DateTime
+  @@index([subscriptionId])
+}
+
+/// Refund tombstones also handle a refund arriving before its payment event.
+model DodoRefund {
+  id String @id
+  paymentId String
+  amount Int
+  full Boolean
+  @@index([paymentId])
 }

@@ -19,7 +19,7 @@ personastudio.site {
     header {
         X-Content-Type-Options nosniff
         Referrer-Policy no-referrer
-        Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.paddle.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.paddle.com https://*.paddle.io; frame-src https://*.paddle.com https://*.paddle.io; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     }
     # The API grants immutable caching only to existing content-hashed assets.
     # Preserve no-store for HTML, private APIs and missing asset responses.

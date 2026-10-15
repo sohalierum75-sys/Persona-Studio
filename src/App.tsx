@@ -26,10 +26,10 @@ import { pendingCheckoutPlan } from "./lib/billing";
 function RootRoute() {
   const auth = useAuth();
   // ?checkout=… keeps a signed-in user on the homepage: it is set when a
-  // pricing checkout starts and by Paddle's post-payment redirect.
+  // pricing checkout starts and by Dodo Payments's post-payment redirect.
   // ?pricing=1 lets signed-in Free users view optional upgrades.
   const [params] = useSearchParams();
-  const inCheckout = params.has("checkout") || params.has("_ptxn") || params.has("pricing") || pendingCheckoutPlan() !== null;
+  const inCheckout = params.has("checkout") || params.has("pricing") || pendingCheckoutPlan() !== null;
 
   // Extension context never needs the marketing homepage
   if (IS_EXTENSION) return <Navigate to="/characters" replace />;

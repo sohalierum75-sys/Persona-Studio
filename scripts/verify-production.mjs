@@ -14,5 +14,5 @@ for (const plan of ['lifetime','monthly']) {
 }
 const page = await fetch(`${origin}/pricing`, { signal: AbortSignal.timeout(20000) });
 const csp = page.headers.get('content-security-policy') ?? '';
-if (!csp.includes('https://cdn.paddle.com') || !csp.includes('frame-src https://*.paddle.com')) throw new Error('Public CSP still blocks Paddle checkout');
-console.log(`Public revision ${health.revision} verified; Paddle CSP enabled. Authenticated Google return and checkout still require a real browser session.`);
+if (!csp.includes("script-src 'self'") || !csp.includes("frame-src 'none'")) throw new Error('Unexpected checkout CSP');
+console.log(`Public revision ${health.revision} verified; hosted Dodo checkout CSP verified. Authenticated Google return and checkout still require a real browser session.`);

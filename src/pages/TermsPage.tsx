@@ -61,24 +61,24 @@ export default function TermsPage() {
       <p><strong>Monthly plan — $9/month (recurring)</strong></p>
       <ul>
         <li>The same full Studio feature set as the Lifetime plan.</li>
-        <li>Charged once per calendar month via Paddle. Your subscription renews automatically on the same day each month.</li>
+        <li>Charged once per calendar month via Dodo Payments. Your subscription renews automatically on the same day each month.</li>
         <li>You may cancel at any time (see Section 5). Access continues until the end of the paid billing period.</li>
       </ul>
 
       <p>
-        Prices are shown in USD. Paddle, as Merchant of Record, may display your local equivalent
+        Prices are shown in USD. Dodo Payments, as Merchant of Record, may display your local equivalent
         and collect applicable taxes at checkout.
       </p>
 
       <h2>4. Billing and payment</h2>
       <p>
-        All payments are processed by <strong>Paddle</strong>, which acts as the Merchant of Record
-        for your purchase. By purchasing a plan you agree to Paddle's{" "}
-        <a href="https://www.paddle.com/legal/terms-of-use" target="_blank" rel="noopener noreferrer">
+        All payments are processed by <strong>Dodo Payments</strong>, which acts as the Merchant of Record
+        for your purchase. By purchasing a plan you agree to Dodo Payments's{" "}
+        <a href="https://dodopayments.com/legal/buyer-terms" target="_blank" rel="noopener noreferrer">
           Terms of Use
         </a>{" "}
         and{" "}
-        <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener noreferrer">
+        <a href="https://dodopayments.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">
           Privacy Policy
         </a>.
       </p>

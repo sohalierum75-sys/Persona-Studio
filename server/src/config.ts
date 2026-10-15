@@ -92,43 +92,27 @@ export const config = {
   /** Days to keep soft-deleted tombstones before hard purge */
   tombstoneDays: parseInt(optional("TOMBSTONE_DAYS", "30"), 10),
 
-  /**
-   * Paddle Billing. Billing is enabled only when apiKey, webhookSecret,
-   * and both price ids are set; otherwise the pricing endpoints degrade
-   * gracefully (config → configured:false, checkout → 503).
-   * Secrets never leave the server; only the public client token is exposed.
-   */
-  paddle: {
-    /** "sandbox" | "production" — controls which Paddle API base URL is used */
-    environment: (process.env.PADDLE_ENVIRONMENT ?? "sandbox") as "sandbox" | "production",
-    apiKey: process.env.PADDLE_API_KEY ?? "",
-    /** Public Paddle.js token; never expose the API key to the browser. */
-    clientToken: process.env.PADDLE_CLIENT_TOKEN ?? "",
-    webhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? "",
-    /** Paddle Price ID for the one-time lifetime deal (pri_xxx) */
-    lifetimePriceId: process.env.PADDLE_LIFETIME_PRICE_ID ?? "",
-    /** Paddle Price ID for the monthly subscription (pri_xxx) */
-    monthlyPriceId: process.env.PADDLE_MONTHLY_PRICE_ID ?? "",
-    /** Max lifetime deals that can ever be granted (server-enforced) */
-    lifetimeDealLimit: parseInt(optional("LIFETIME_DEAL_LIMIT", "50"), 10),
-    /** Web app base URL for payment links (defaults to PUBLIC_BASE_URL). */
-    redirectUrl: optional("PADDLE_REDIRECT_URL", ""),
-    get apiBaseUrl(): string {
-      return this.environment === "production"
-        ? "https://api.paddle.com"
-        : "https://sandbox-api.paddle.com";
-    },
+  /** Server-only Dodo credentials. Test and live use separate products and keys. */
+  dodo: {
+    environment: (process.env.DODO_PAYMENTS_ENVIRONMENT ?? "test_mode") as "test_mode" | "live_mode",
+    apiKey: process.env.DODO_PAYMENTS_API_KEY ?? "",
+    webhookSecret: process.env.DODO_PAYMENTS_WEBHOOK_KEY ?? "",
+    lifetimeProductId: process.env.DODO_LIFETIME_PRODUCT_ID ?? "",
+    monthlyProductId: process.env.DODO_MONTHLY_PRODUCT_ID ?? "",
+    lifetimeDealLimit: Number(optional("LIFETIME_DEAL_LIMIT", "50")),
+    redirectUrl: optional("DODO_RETURN_BASE_URL", process.env.PUBLIC_BASE_URL ?? ""),
   },
 };
 
 /** Only environment variable names are safe to return to the browser. */
 export function billingMissingVariables(): string[] {
-  const p = config.paddle;
+  const p = config.dodo;
   return Object.entries({
-    PADDLE_API_KEY: p.apiKey,
-    PADDLE_WEBHOOK_SECRET: p.webhookSecret,
-    PADDLE_LIFETIME_PRICE_ID: p.lifetimePriceId,
-    PADDLE_MONTHLY_PRICE_ID: p.monthlyPriceId,
+    DODO_PAYMENTS_API_KEY: p.apiKey,
+    DODO_PAYMENTS_WEBHOOK_KEY: p.webhookSecret,
+    DODO_LIFETIME_PRODUCT_ID: p.lifetimeProductId,
+    DODO_MONTHLY_PRODUCT_ID: p.monthlyProductId,
+    DODO_RETURN_BASE_URL: p.redirectUrl,
   }).filter(([, value]) => !value.trim() || /YOUR_|CHANGE_ME|REPLACE_WITH/.test(value))
     .map(([name]) => name);
 }
@@ -151,23 +135,15 @@ export function validateConfig(): string[] {
     problems.push("Set ALLOWED_ORIGINS and/or EXTENSION_REDIRECT_PREFIXES so OAuth callbacks can be validated");
   }
 
-  const p = config.paddle;
-  const env = p.environment;
-  if (env !== "sandbox" && env !== "production") {
-    problems.push("PADDLE_ENVIRONMENT must be 'sandbox' or 'production'");
+  const p = config.dodo;
+  if (!["test_mode", "live_mode"].includes(p.environment)) problems.push("DODO_PAYMENTS_ENVIRONMENT must be test_mode or live_mode");
+  if (!Number.isInteger(p.lifetimeDealLimit) || p.lifetimeDealLimit < 1 || p.lifetimeDealLimit > 50) problems.push("LIFETIME_DEAL_LIMIT must be an integer from 1 to 50");
+  if (p.redirectUrl) {
+    try {
+      const url = new URL(p.redirectUrl);
+      if (url.username || url.password || url.search || url.hash || (url.protocol !== "https:" && (config.isProd || url.protocol !== "http:"))) throw new Error();
+    } catch { problems.push("DODO_RETURN_BASE_URL must be a trusted application URL (HTTPS in production)"); }
   }
-  if (!Number.isFinite(p.lifetimeDealLimit) || p.lifetimeDealLimit < 1) {
-    problems.push("LIFETIME_DEAL_LIMIT must be a positive integer");
-  }
-  const missing = billingMissingVariables();
-  if (!missing.includes("PADDLE_WEBHOOK_SECRET") && p.webhookSecret.length < 16) {
-    problems.push("PADDLE_WEBHOOK_SECRET should be a long random string (16+ characters)");
-  }
-  if (!missing.includes("PADDLE_LIFETIME_PRICE_ID") && !/^pri_/.test(p.lifetimePriceId)) {
-    problems.push("PADDLE_LIFETIME_PRICE_ID must be a Paddle price ID starting with pri_");
-  }
-  if (!missing.includes("PADDLE_MONTHLY_PRICE_ID") && !/^pri_/.test(p.monthlyPriceId)) {
-    problems.push("PADDLE_MONTHLY_PRICE_ID must be a Paddle price ID starting with pri_");
-  }
+  if (p.lifetimeProductId && p.lifetimeProductId === p.monthlyProductId) problems.push("Dodo lifetime and monthly products must differ");
   return problems;
 }

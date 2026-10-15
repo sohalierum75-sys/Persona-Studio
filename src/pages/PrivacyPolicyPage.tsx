@@ -47,7 +47,7 @@ export default function PrivacyPolicyPage() {
         </li>
         <li>
           <strong>Payment data</strong> — if you purchase a plan, payment is processed entirely by{" "}
-          <strong>Paddle</strong>. We receive a record of which plan was purchased and when, but we
+          <strong>Dodo Payments</strong>. We receive a record of which plan was purchased and when, but we
           never see or store your card number, bank details, or full billing address.
         </li>
       </ul>
@@ -56,7 +56,7 @@ export default function PrivacyPolicyPage() {
       <ul>
         <li>To create and maintain your account and keep your Studio content in sync.</li>
         <li>To enforce plan limits (characters, episodes, saved prompts).</li>
-        <li>To process your purchase and grant paid access via Paddle webhooks.</li>
+        <li>To process your purchase and grant paid access via Dodo Payments webhooks.</li>
         <li>To respond to support requests sent to our contact email.</li>
         <li>To monitor service uptime and debug errors.</li>
       </ul>
@@ -78,12 +78,12 @@ export default function PrivacyPolicyPage() {
           PostgreSQL database. Data is stored in the region configured at the time of deployment.
         </li>
         <li>
-          <strong>Paddle</strong> — handles payment processing, invoicing, and tax compliance for
+          <strong>Dodo Payments</strong> — handles payment processing, invoicing, and tax compliance for
           Lifetime and Monthly plan purchases.{" "}
-          <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener noreferrer">
-            Paddle's Privacy Policy
+          <a href="https://dodopayments.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">
+            Dodo Payments's Privacy Policy
           </a>{" "}
-          governs the data they collect during checkout. Paddle acts as the Merchant of Record for
+          governs the data they collect during checkout. Dodo Payments acts as the Merchant of Record for
           your purchase.
         </li>
       </ul>

@@ -145,3 +145,7 @@ dc exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 References: [Caddy redirects](https://caddyserver.com/docs/caddyfile/directives/redir),
 [automatic HTTPS](https://caddyserver.com/docs/automatic-https),
 [Cloudflare redirect loops](https://developers.cloudflare.com/ssl/troubleshooting/too-many-redirects/).
+
+## Payments
+
+See [Dodo Payments migration, dashboard setup and deployment](DODO_PAYMENTS.md). The existing PostgreSQL volume, OAuth configuration and deployment architecture are retained.

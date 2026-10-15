@@ -2,7 +2,7 @@
  * PricingPage — dedicated public page at /pricing.
  *
  * Reuses the existing PricingSection component (cards, prices, plan details,
- * Paddle checkout integration) unchanged. The shell mirrors the legal-page
+ * Dodo Payments checkout integration) unchanged. The shell mirrors the legal-page
  * layout: sticky header with logo + back link, then a shared footer.
  *
  * No auth gate — the route is accessible without signing in, survives hard

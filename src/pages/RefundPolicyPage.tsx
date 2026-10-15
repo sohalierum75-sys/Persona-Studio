@@ -2,7 +2,7 @@
  * RefundPolicyPage — Persona Studio Refund Policy.
  *
  * Covers the 14-day refund window, renewal exclusions, how to request a
- * refund, and Paddle's role. Review with a qualified attorney before launch.
+ * refund, and Dodo Payments's role. Review with a qualified attorney before launch.
  */
 
 import LegalPage from "./LegalPage";
@@ -51,17 +51,17 @@ export default function RefundPolicyPage() {
         <li>A brief description of the issue (optional, but helpful).</li>
       </ul>
       <p>
-        We will respond within 2 business days and, if eligible, process the refund through Paddle.
+        We will respond within 2 business days and, if eligible, process the refund through Dodo Payments.
       </p>
 
-      <h2>4. Paddle as Merchant of Record</h2>
+      <h2>4. Dodo Payments as Merchant of Record</h2>
       <p>
-        Payments are processed by <strong>Paddle</strong>, which acts as the Merchant of Record
-        for all Persona Studio transactions. Refunds are issued via Paddle's systems. If you have
+        Payments are processed by <strong>Dodo Payments</strong>, which acts as the Merchant of Record
+        for all Persona Studio transactions. Refunds are issued via Dodo Payments's systems. If you have
         a dispute about a charge that you cannot resolve with us directly, you may also contact
-        Paddle support at{" "}
-        <a href="https://www.paddle.com/legal/buyer-faq" target="_blank" rel="noopener noreferrer">
-          paddle.com/legal/buyer-faq
+        Dodo Payments support at{" "}
+        <a href="https://dodopayments.com" target="_blank" rel="noopener noreferrer">
+          dodopayments.com
         </a>.
       </p>
 

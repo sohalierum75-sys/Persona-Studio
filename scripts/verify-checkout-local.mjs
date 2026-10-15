@@ -1,6 +1,6 @@
 // Real-browser verification of the authenticated checkout flow against a REAL
-// server (no route mocks): real JWT sessions, real /api/billing/checkout, real
-// paddle.js from the Paddle CDN, real sandbox overlay. Only the Google identity
+// server (no route mocks): real JWT sessions, real /api/billing/checkout and
+// Dodo hosted test checkout. Only the Google identity
 // step is replaced by the server's dev-only test-login, because production
 // issues sessions exclusively through real Google sign-ins.
 //
@@ -8,7 +8,7 @@
 //  - session restoration,  - plan carried via ?checkout= / ps_billing_intent,
 //  - no Workspace (/characters) redirect before checkout,
 //  - exactly one POST /api/billing/checkout with the selected plan,
-//  - Paddle sandbox overlay opens (or the specific setup error is surfaced),
+//  - Dodo Payments hosted test checkout opens (or the specific setup error is surfaced),
 //  - reload does not create a second transaction (resume-once).
 import { chromium } from 'playwright';
 import { execFileSync, spawn } from 'node:child_process';
@@ -24,6 +24,7 @@ const PORT = 3910;
 const base = `http://127.0.0.1:${PORT}`;
 
 process.loadEnvFile(path.join(serverDir, '.env'));
+if (process.env.DODO_PAYMENTS_ENVIRONMENT === 'live_mode') throw new Error('This verification script requires Dodo test_mode');
 const dbUrl = new URL(process.env.DATABASE_URL);
 dbUrl.searchParams.set('schema', `checkoutverify_${Date.now()}`);
 const env = {
@@ -67,28 +68,31 @@ try {
   page.on('framenavigated', f => {
     const url = new URL(f.url() || 'about:blank');
     if (f === page.mainFrame() && url.pathname === '/characters') events.workspaceNavigation = true;
-    if (url.hostname.endsWith('.paddle.com') && url.hostname.includes('checkout')) events.sandboxFrames.push(url.hostname);
+    if (url.hostname.endsWith('.dodopayments.com') && url.hostname.includes('checkout')) events.sandboxFrames.push(url.hostname);
   });
   page.on('console', m => { if (m.type() === 'error') events.alerts.push(m.text().slice(0, 200)); });
 
   for (const plan of ['lifetime', 'monthly']) {
     const before = events.checkoutCalls.length;
+    const beforeNavigations = events.sandboxFrames.length;
     await page.goto(`${base}${PATHUnderTest}${PATHUnderTest.includes('?') ? '&' : '?'}checkout=${plan}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     const stop = await waitFor(plan, before, 45000);
     const calls = events.checkoutCalls.slice(before).filter(p => p === plan);
-    const intentCleared = await page.evaluate(() => sessionStorage.getItem('ps_billing_intent') === null);
+    const hostedCheckoutOpened = events.sandboxFrames.length > beforeNavigations;
+    // Session storage belongs to the application origin, not Dodo's hosted page.
+    const intentCleared = hostedCheckoutOpened || await page.evaluate(() => sessionStorage.getItem('ps_billing_intent') === null);
     const result = {
       plan,
       checkoutCalls: calls.length,
       checkoutStatuses: events.checkoutStatuses.slice(before),
       workspaceRedirect: events.workspaceNavigation,
-      intentConsumed: new URL(page.url()).searchParams.get('pricing') === '1' && intentCleared,
-      sandboxOverlayOpened: events.sandboxFrames.length > (plan === 'lifetime' ? 0 : report.plans[0]?.sandboxOverlayOpened ? 1 : 0),
+      intentConsumed: (hostedCheckoutOpened || new URL(page.url()).searchParams.get('pricing') === '1') && intentCleared,
+      hostedCheckoutOpened,
       stop,
     };
-    // Pass = the happy path (one checkout call + overlay) OR the useful-error
-    // path (server not Paddle-configured here: specific message, no retry loop).
-    const happyPath = result.checkoutCalls === 1 && calls[0] === plan && result.sandboxOverlayOpened;
+    // Pass = the happy path (one checkout call + redirect) OR the useful-error
+    // path (server not Dodo Payments-configured here: specific message, no retry loop).
+    const happyPath = result.checkoutCalls === 1 && calls[0] === plan && result.hostedCheckoutOpened;
     const errorPath = result.checkoutCalls === 0 && /Checkout setup incomplete/.test(stop ?? '');
     result.passed = !result.workspaceRedirect && result.intentConsumed && (happyPath || errorPath);
     report.plans.push(result);

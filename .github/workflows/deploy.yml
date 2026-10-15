@@ -20,6 +20,20 @@ env:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_DB: persona_test
+          POSTGRES_USER: persona_test
+          POSTGRES_PASSWORD: test_only_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U persona_test -d persona_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://persona_test:test_only_password@127.0.0.1:5432/persona_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,9 +41,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm --prefix server ci
+      - run: npm --prefix server run generate
+      - run: npx playwright install --with-deps chromium
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npm --prefix server run typecheck
+      - run: npm --prefix server run build
+      - run: npm --prefix server test
+      - run: npm run test:auth
 
   deploy:
     needs: checks
