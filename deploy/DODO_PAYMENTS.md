@@ -34,7 +34,7 @@ Official references used (reviewed October 15, 2026):
 4. Under Developer → Webhooks, create an HTTPS endpoint:
    `https://personastudio.site/api/billing/webhook`. Subscribe to
    `payment.succeeded`, `payment.failed`, `payment.cancelled`, `refund.succeeded`,
-   `refund.failed`, and all `subscription.*` events (active, updated, renewed,
+   `refund.failed`, all `dispute.*` events, and all `subscription.*` events (active, updated, renewed,
    plan_changed, cancelled, expired, on_hold, paused, unpaused, past_due, failed,
    update_payment_method). Failed payments/refunds are acknowledged without
    granting or revoking access. Copy the endpoint signing secret unchanged.
@@ -65,11 +65,11 @@ The additive migration `20261015000000_dodo_payments` creates checkout,
 subscription, payment, and refund tables and changes the default provider for
 **new** purchases. It does not rewrite old provider values, purchases, billing
 events, users, subscription IDs, or entitlements. Historical migration files
-must remain unchanged, including their Paddle/Lemon Squeezy names.
+must remain unchanged, including their historical provider names.
 
 Before production cutover, back up the existing PostgreSQL database and verify
 the backup. Audit existing paid subscriptions and uncompleted legacy payment
-links. Do not deploy this as an unattended switch while Paddle subscriptions
+links. Do not deploy this as an unattended switch while existing provider subscriptions
 continue charging: changing API code cannot transfer payment mandates.
 
 Coordinate existing recurring-subscription migration with Dodo and the old
@@ -128,10 +128,10 @@ refunds), legacy lifetime accounts without ledger rows, and outstanding checkout
 reservations. Refunds do not create a 51st first-50 offer. Concurrent requests
 reuse an existing payable checkout; only one grant may consume a reservation.
 
-**Reservations are deliberately durable.** The documented Checkout Sessions API
-does not provide an expiry/cancellation control. A local timeout cannot prove an
-old checkout is unpayable. Abandoned sessions therefore hold a slot until the
-operator reconciles them. Failed creates with an ambiguous network outcome also
+**Reservations are deliberately durable.** Hosted sessions expire, but this app
+does not automatically release reservations from a local timer: delayed payment
+events must also be reconciled. Abandoned sessions hold a slot until the operator
+confirms the provider session is unpayable and reconciles its payments. Failed creates with an ambiguous network outcome also
 retain their reservation; automatic retries could create duplicate payable links.
 
 For a reservation with no saved URL, search the dashboard/API using the
@@ -167,10 +167,49 @@ new checkout during reconciliation; preserve webhook delivery/replay records.
 | Area | Files |
 | --- | --- |
 | Server billing | `server/src/lib/dodo.ts`, `server/src/routes/billing.ts`, `server/src/config.ts`, `server/src/index.ts`, `server/src/routes/sync.ts` |
-| Schema and dependency | `server/prisma/schema.prisma`, `server/prisma/migrations/20261015000000_dodo_payments/migration.sql`, `server/package.json`, `server/package-lock.json` |
+| Schema and dependency | `server/prisma/schema.prisma`, `server/prisma/migrations/20261015000000_dodo_payments/migration.sql`, `server/prisma/migrations/20261016000000_dodo_disputes/migration.sql`, `server/package.json`, `server/package-lock.json` |
 | Checkout continuation | `src/lib/billing.ts`, `src/components/home/PricingSection.tsx`, `src/App.tsx` |
 | Provider wording/links | `src/pages/PricingPage.tsx`, `src/pages/TermsPage.tsx`, `src/pages/PrivacyPolicyPage.tsx`, `src/pages/RefundPolicyPage.tsx` |
 | Tests | `server/tests/billing.test.ts`, `server/tests/checkout.test.ts`, `server/tests/integration.test.ts`, `tests/auth-flow.test.mjs` |
 | Deployment and configuration | `server/.env.example`, `deploy/Caddyfile`, `deploy/compose.production.yaml`, `.github/workflows/deploy.yml`, `.dockerignore`, `.gitignore` |
 | Verification/documentation | `scripts/verify-checkout-browser.mjs`, `scripts/verify-checkout-local.mjs`, `scripts/verify-production.mjs`, `README.md`, `deploy/README.md`, this guide |
-| Removed runtime Paddle integration | `server/src/lib/paddle.ts`, `src/lib/paddle-checkout.ts` |
+
+
+## Completing the production cutover
+
+The API key is created under Developer > API Keys. Copy each product ID from
+Products after creating the $39 one-time and $9 monthly products. Under Developer
+> Webhooks, create the endpoint above and copy its Overview signing secret.
+Use keys, products and webhook secrets from the same test/live environment.
+`PUBLIC_BASE_URL=https://personastudio.site` and `DODO_RETURN_BASE_URL` must have
+the same origin. Product variable names remain `DODO_LIFETIME_PRODUCT_ID` and
+`DODO_MONTHLY_PRODUCT_ID` for compatibility with this application's configuration.
+
+Update the existing `/opt/persona-studio/.env` on the VPS without replacing its
+database, OAuth or JWT settings. Deploy the new commit through Build & Deploy;
+restarting an old container will not install the new integration. For environment
+changes to an already updated image, recreate the API container with the deployed
+SHA pinned in IMAGE_TAG:
+
+```sh
+cd /opt/persona-studio
+# Set IMAGE_TAG to the reviewed deployed commit SHA before this command.
+docker compose --project-directory /opt/persona-studio --env-file /opt/persona-studio/.env -f deploy/compose.production.yaml up -d --no-deps --force-recreate api
+```
+
+The production verifier now requires `/api/billing/config` to identify `dodo`
+and report configuration present, in addition to the expected build revision.
+This does not prove that credentials, products or webhook delivery work. Verify
+both authenticated purchase flows and signed test events before live activation.
+
+Disputes use a separate additive ledger. Opened/challenged/accepted/lost/expired
+disputes suspend the affected payment's access; won/cancelled disputes restore
+eligible access only if the payment was not refunded. Older dispute events cannot
+overwrite newer state, and a dispute arriving before payment prevents a later
+grant. An older monthly payment's dispute does not revoke a newer paid renewal.
+Subscribe to all seven dispute events. See the official dispute payload guide:
+https://docs.dodopayments.com/developer-resources/webhooks/intents/dispute
+
+Applied historical SQL migrations and captured performance reports are retained
+as audit history; they are not active payment integrations. Do not rewrite applied
+migration checksums or existing provider identifiers.

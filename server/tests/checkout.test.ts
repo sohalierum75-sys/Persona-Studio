@@ -1,7 +1,7 @@
 ﻿import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { config, billingConfigured, billingMissingVariables } from "../src/config.js";
+import { config, billingConfigured, billingMissingVariables, billingReturnUrl } from "../src/config.js";
 import { verifyWebhook, isDodoCheckoutUrl, hasActiveSubscription, dodoClient } from "../src/lib/dodo.js";
 
 const secret = 'whsec_' + Buffer.from('test-secret-with-at-least-32-bytes').toString('base64');
@@ -20,11 +20,12 @@ test('official SDK accepts valid Standard Webhooks signature and rejects tamper,
 });
 test('config reports names only and rejects placeholders', () => {
   const saved = { ...config.dodo };
+  const publicUrl = config.publicBaseUrl; config.publicBaseUrl = "https://studio.example";
   try {
     Object.assign(config.dodo, {apiKey:'',webhookSecret:'YOUR_SECRET',lifetimeProductId:'pdt_a',monthlyProductId:'pdt_b',redirectUrl:'https://studio.example'});
     assert.equal(billingConfigured(), false);
     assert.deepEqual(billingMissingVariables(), ['DODO_PAYMENTS_API_KEY','DODO_PAYMENTS_WEBHOOK_KEY']);
-  } finally { Object.assign(config.dodo,saved); }
+  } finally { Object.assign(config.dodo,saved); config.publicBaseUrl = publicUrl; }
 });
 test('hosted checkout URLs are restricted to Dodo HTTPS hosts', () => {
   assert.equal(isDodoCheckoutUrl('https://test.checkout.dodopayments.com/session/cks_a'),true);
@@ -50,4 +51,17 @@ test('SDK selects separate test and live API hosts without exposing credentials'
       assert.equal((await dodoClient().products.retrieve('pdt_test')).product_id,'pdt_test');
     }
   } finally {globalThis.fetch=original;Object.assign(config.dodo,saved);}
+});
+
+
+test('checkout return URL must be the public origin without credentials, paths or parameters', () => {
+  const saved = config.dodo.redirectUrl, publicUrl = config.publicBaseUrl;
+  try {
+    config.publicBaseUrl = 'https://studio.example';
+    config.dodo.redirectUrl = 'https://studio.example/';
+    assert.equal(billingReturnUrl(), 'https://studio.example/?checkout=success');
+    for (const value of ['https://evil.example', 'https://studio.example/redirect', 'https://studio.example/?next=evil', 'https://user:pass@studio.example', 'http://studio.example']) {
+      config.dodo.redirectUrl = value; assert.throws(() => billingReturnUrl());
+    }
+  } finally { config.dodo.redirectUrl = saved; config.publicBaseUrl = publicUrl; }
 });

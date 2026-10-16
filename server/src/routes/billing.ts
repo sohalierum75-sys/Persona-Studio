@@ -8,7 +8,7 @@ export const billingRouter = Router();
 export const billingWebhookRouter = Router();
 billingRouter.get("/config", async (_req, res) => {
   const configured = billingConfigured();
-  res.json({ configured, environment: config.dodo.environment, missingVariables: billingMissingVariables(),
+  res.json({ provider: "dodo", configured, environment: config.dodo.environment, missingVariables: billingMissingVariables(),
     lifetime: { limit: config.dodo.lifetimeDealLimit, claimed: configured ? await lifetimeClaims() : null, remaining: configured ? await lifetimeRemaining() : null } });
 });
 billingRouter.get("/entitlements", requireAuth, async (req, res) => {

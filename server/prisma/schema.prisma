@@ -125,16 +125,16 @@ model Purchase {
   provider               String   @default("dodo")
   /// lifetime | monthly
   kind                   String
-  /// granted | limit_reached | refunded | unmatched
+  /// granted | limit_reached | refunded | disputed | revoked | unmatched
   status                 String
   userId                 String?
   user                   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   email                  String
-  /// Provider order/transaction id (Paddle: txn_xxx; legacy LS: order id)
+  /// Provider payment/order id; historical identifiers are retained
   providerOrderId        String?  @unique
-  /// Provider subscription id (Paddle: sub_xxx; legacy LS: sub id)
+  /// Provider subscription id
   providerSubscriptionId String?  @unique
-  /// Provider price id (Paddle: pri_xxx; legacy LS: variant id)
+  /// Dodo product id or historical provider price id
   providerPriceId        String
   amountCents            Int
   currency               String
@@ -198,5 +198,14 @@ model DodoRefund {
   paymentId String
   amount Int
   full Boolean
+  @@index([paymentId])
+}
+
+/// Ordered dispute state, including events arriving before the payment.
+model DodoDispute {
+  id String @id
+  paymentId String
+  status String
+  eventAt DateTime
   @@index([paymentId])
 }

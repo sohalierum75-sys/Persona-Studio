@@ -7,7 +7,7 @@ if (fs.existsSync('.env')) process.loadEnvFile('.env');
 const schema = `dodo_test_${Date.now()}`;
 const db = new URL(process.env.DATABASE_URL!); db.searchParams.set('schema',schema);
 process.env.DATABASE_URL=db.href;
-Object.assign(process.env,{JWT_SECRET:'test-signing-secret-at-least-32-characters',ALLOW_TEST_LOGIN:'true',NODE_ENV:'test',ALLOWED_ORIGINS:'http://localhost:5173',DODO_PAYMENTS_ENVIRONMENT:'test_mode',DODO_PAYMENTS_API_KEY:'test-api-key',DODO_LIFETIME_PRODUCT_ID:'pdt_lifetime',DODO_MONTHLY_PRODUCT_ID:'pdt_monthly',DODO_RETURN_BASE_URL:'https://studio.example',LIFETIME_DEAL_LIMIT:'2'});
+Object.assign(process.env,{JWT_SECRET:'test-signing-secret-at-least-32-characters',ALLOW_TEST_LOGIN:'true',NODE_ENV:'test',ALLOWED_ORIGINS:'http://localhost:5173',DODO_PAYMENTS_ENVIRONMENT:'test_mode',DODO_PAYMENTS_API_KEY:'test-api-key',DODO_LIFETIME_PRODUCT_ID:'pdt_lifetime',DODO_MONTHLY_PRODUCT_ID:'pdt_monthly',PUBLIC_BASE_URL:'https://studio.example',DODO_RETURN_BASE_URL:'https://studio.example',LIFETIME_DEAL_LIMIT:'2'});
 const secret=Buffer.from('test-secret-with-at-least-32-bytes');
 process.env.DODO_PAYMENTS_WEBHOOK_KEY='whsec_'+secret.toString('base64');
 let prisma:any, server:any, base:string;
@@ -124,4 +124,69 @@ test('wrong account metadata cannot grant; forged success return has no effect; 
 test('ambiguous remote create failure keeps reservation and retry cannot duplicate a charge',async()=>{
  const b=await buyer();failCreate=true;const before=checkoutCalls;try{const r=await checkout(b,'monthly');assert.equal(r.status,502);assert.doesNotMatch(JSON.stringify(r.json),/secret|test-api-key/);}finally{failCreate=false;}
  assert.equal((await checkout(b,'monthly')).status,409);assert.equal(checkoutCalls,before+1);
+});
+
+
+test('missing configuration returns names only and cannot create checkout', async () => {
+ const { config } = await import('../src/config.js');
+ const saved = { ...config.dodo };
+ const b = await buyer();
+ try {
+   config.dodo.apiKey = ''; config.dodo.webhookSecret = '';
+   const info = await request('/api/billing/config');
+   assert.equal(info.json.provider, 'dodo'); assert.equal(info.json.configured, false);
+   assert.deepEqual(info.json.missingVariables, ['DODO_PAYMENTS_API_KEY', 'DODO_PAYMENTS_WEBHOOK_KEY']);
+   const result = await checkout(b, 'monthly');
+   assert.equal(result.status, 503); assert.deepEqual(result.json.missingVariables, info.json.missingVariables);
+   assert.doesNotMatch(JSON.stringify([info.json, result.json]), /test-api-key|whsec_/);
+   assert.equal(await prisma.billingCheckout.count({ where: { userId: b.user.id } }), 0);
+ } finally { Object.assign(config.dodo, saved); }
+});
+
+test('untrusted return origin fails before contacting the provider', async () => {
+ const { config } = await import('../src/config.js'); const saved = config.dodo.redirectUrl;
+ const b = await buyer(), before = checkoutCalls;
+ try {
+   config.dodo.redirectUrl = 'https://evil.example';
+   assert.equal((await checkout(b, 'monthly')).status, 503);
+   assert.equal(checkoutCalls, before);
+ } finally { config.dodo.redirectUrl = saved; }
+});
+
+test('monthly disputes revoke, reject stale updates, restore won disputes, and preserve refunds', async () => {
+ const b = await buyer(); await checkout(b, 'monthly'); const sid = 'sub_' + randomUUID();
+ await post(await sub(b, sid, 'active'));
+ const p = await payment(b, randomUUID(), 'monthly', sid); await post(p);
+ const did = randomUUID(); let time = Date.now();
+ const change = (status: string, at = time += 1000) => event('dispute.' + status, { dispute_id: did, payment_id: p.data.payment_id, dispute_status: 'dispute_' + status }, new Date(at).toISOString());
+ const opened = change('opened'), delivery = randomUUID();
+ assert.equal((await post(opened, delivery)).status, 200);
+ assert.equal((await post(opened, delivery)).status, 200);
+ assert.equal((await request('/api/billing/entitlements', b.accessToken)).json.plan, 'free');
+ await post(change('won'));
+ assert.equal((await request('/api/billing/entitlements', b.accessToken)).json.plan, 'monthly');
+ await post(opened);
+ assert.equal((await request('/api/billing/entitlements', b.accessToken)).json.plan, 'monthly');
+ await post(change('lost'));
+ assert.equal((await request('/api/billing/entitlements', b.accessToken)).json.plan, 'free');
+ const renewal = await payment(b, randomUUID(), 'monthly', sid);
+ renewal.data.created_at = new Date(Date.now() + 10000).toISOString(); await post(renewal);
+ assert.equal((await request('/api/billing/entitlements', b.accessToken)).json.plan, 'monthly');
+ await post(refund(renewal.data.payment_id, 900)); await post(change('cancelled'));
+ assert.equal((await request('/api/billing/entitlements', b.accessToken)).json.plan, 'free');
+});
+
+test('lifetime dispute before payment blocks access; winning restores only an eligible non-refunded purchase', async () => {
+ const b = await buyer();
+ // Seed an attributable reservation independently of the exhausted promotional slots.
+ await prisma.billingCheckout.create({ data: { userId: b.user.id, plan: 'lifetime', productId: 'pdt_lifetime', environment: 'test_mode' } });
+ const p = await payment(b), did = randomUUID(); let time = Date.now();
+ const change = (status: string) => event('dispute.' + status, { dispute_id: did, payment_id: p.data.payment_id, dispute_status: 'dispute_' + status }, new Date(time += 1000).toISOString());
+ await post(change('accepted')); await post(p);
+ assert.equal((await user(b)).lifetimeAt, null);
+ assert.equal((await prisma.purchase.findUnique({ where: { providerOrderId: p.data.payment_id } })).status, 'disputed');
+ await post(change('won')); assert.ok((await user(b)).lifetimeAt);
+ await post(change('opened')); assert.equal((await user(b)).lifetimeAt, null);
+ await post(refund(p.data.payment_id)); await post(change('cancelled'));
+ assert.equal((await user(b)).lifetimeAt, null);
 });

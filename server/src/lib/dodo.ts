@@ -2,7 +2,7 @@ import DodoPayments from "dodopayments";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma.js";
-import { config, billingConfigured } from "../config.js";
+import { config, billingConfigured, billingReturnUrl } from "../config.js";
 import { freeLimits, getUsage } from "./plans.js";
 
 type Tx = Prisma.TransactionClient;
@@ -25,19 +25,22 @@ export function hasActiveSubscription(u: { subscriptionStatus: string | null; su
 }
 export function lifetimeClaims() {
   // Refunded purchases still consumed a first-50 offer; do not resell that slot.
-  return prisma.purchase.count({ where: { kind: "lifetime", status: { in: ["granted", "refunded"] } } });
+  return prisma.purchase.count({ where: { kind: "lifetime", status: { in: ["granted", "refunded", "disputed"] } } });
 }
 async function remaining(tx: Tx) {
-  const claimed = await tx.purchase.count({ where: { kind: "lifetime", status: { in: ["granted", "refunded"] } } });
+  const claimed = await tx.purchase.count({ where: { kind: "lifetime", status: { in: ["granted", "refunded", "disputed"] } } });
   const held = await tx.billingCheckout.count({ where: { plan: "lifetime", status: "reserved" } });
   // Also count legacy entitlement-only accounts conservatively.
-  const unledgered = await tx.user.count({ where: { lifetimeAt: { not: null }, purchases: { none: { kind: "lifetime", status: { in: ["granted", "refunded"] } } } } });
+  const unledgered = await tx.user.count({ where: { lifetimeAt: { not: null }, purchases: { none: { kind: "lifetime", status: { in: ["granted", "refunded", "disputed"] } } } } });
   return Math.max(0, config.dodo.lifetimeDealLimit - claimed - held - unledgered);
 }
 export function lifetimeRemaining() { return remaining(prisma); }
 
 export async function createCheckout(params: { plan: "lifetime" | "monthly"; user: { id: string; email: string; name: string } }): Promise<string> {
   if (!billingConfigured()) throw new CheckoutError("Checkout setup incomplete", 503);
+  let returnUrl: string;
+  try { returnUrl = billingReturnUrl(); }
+  catch { throw new CheckoutError("Checkout setup incomplete: DODO_RETURN_BASE_URL must match PUBLIC_BASE_URL.", 503); }
   const { plan, user } = params;
   const p = config.dodo;
   const productId = plan === "lifetime" ? p.lifetimeProductId : p.monthlyProductId;
@@ -74,7 +77,7 @@ export async function createCheckout(params: { plan: "lifetime" | "monthly"; use
     product_cart: [{ product_id: productId, quantity: 1 }],
     customer: { email: user.email, name: user.name },
     metadata: { user_id: user.id, plan, checkout_id: attempt.id },
-    return_url: `${p.redirectUrl.replace(/\/$/, "")}/?checkout=success`,
+    return_url: returnUrl,
     feature_flags: { allow_discount_code: false },
   });
   const url = session.checkout_url;
@@ -97,6 +100,12 @@ const subscription = z.object({ subscription_id: z.string().min(1), product_id: 
   previous_billing_date: date, next_billing_date: date, customer: z.object({ email: z.string() }) });
 const refund = z.object({ refund_id: z.string().min(1), payment_id: z.string().min(1), status: z.literal("succeeded"),
   amount: z.number().int().nonnegative().nullish(), is_partial: z.boolean() });
+const dispute = z.object({ dispute_id: z.string().min(1), payment_id: z.string().min(1),
+  dispute_status: z.enum(["dispute_opened", "dispute_challenged", "dispute_accepted", "dispute_lost", "dispute_expired", "dispute_won", "dispute_cancelled"]) });
+
+async function disputed(tx: Tx, paymentId: string) {
+  return await tx.dodoDispute.count({ where: { paymentId, status: { notIn: ["dispute_won", "dispute_cancelled"] } } }) > 0;
+}
 
 export function verifyWebhook(raw: Buffer, headers: Record<string, string>) {
   if (!config.dodo.webhookSecret || !headers["webhook-id"] || !headers["webhook-timestamp"] || !headers["webhook-signature"]) throw new Error("Missing signature");
@@ -117,7 +126,7 @@ async function refreshSubscription(tx: Tx, id: string) {
   if (!s) return;
   const latest = await tx.dodoPayment.findFirst({ where: { subscriptionId: id }, orderBy: { paidAt: "desc" } });
   const refunded = latest && await fullyRefunded(tx, latest.id, latest.amount);
-  const status = refunded ? "refunded" : s.status;
+  const status = refunded ? "refunded" : latest && await disputed(tx, latest.id) ? "disputed" : s.status;
   const user = await tx.user.findUnique({ where: { id: s.userId } });
   if (!user) return;
   // Do not let an old subscription overwrite another paid subscription, including legacy ones.
@@ -132,6 +141,20 @@ async function reconcileRefund(tx: Tx, paymentId: string) {
   if (p.kind === "lifetime") {
     const other = await tx.purchase.count({ where: { userId: p.userId, kind: "lifetime", status: "granted" } });
     if (!other) await tx.user.update({ where: { id: p.userId }, data: { lifetimeAt: null } });
+  } else if (p.subscriptionId) await refreshSubscription(tx, p.subscriptionId);
+}
+async function reconcileDispute(tx: Tx, paymentId: string) {
+  const p = await tx.dodoPayment.findUnique({ where: { id: paymentId } });
+  if (!p) return;
+  if (await fullyRefunded(tx, p.id, p.amount)) { await reconcileRefund(tx, p.id); return; }
+  const blocked = await disputed(tx, p.id);
+  // Only restore purchases previously suspended by a dispute; never promote a
+  // rejected extra lifetime payment or overwrite an unrelated entitlement.
+  await tx.purchase.updateMany({ where: { provider: "dodo", providerOrderId: p.id, status: { in: ["granted", "disputed"] } }, data: { status: blocked ? "disputed" : "granted" } });
+  if (p.kind === "lifetime") {
+    const granted = await tx.purchase.findFirst({ where: { userId: p.userId, kind: "lifetime", status: "granted" } });
+    if (blocked && !granted) await tx.user.update({ where: { id: p.userId }, data: { lifetimeAt: null } });
+    if (!blocked && granted) await tx.user.update({ where: { id: p.userId }, data: { lifetimeAt: granted.createdAt } });
   } else if (p.subscriptionId) await refreshSubscription(tx, p.subscriptionId);
 }
 export async function processWebhook(verified: unknown, webhookId: string) {
@@ -164,6 +187,7 @@ export async function processWebhook(verified: unknown, webhookId: string) {
             if (status === "granted") await tx.user.update({ where: { id: attempt.userId }, data: { lifetimeAt: d.created_at } });
             await tx.billingCheckout.update({ where: { id: attempt.id }, data: { status: "consumed" } });
           } else if (d.subscription_id) await refreshSubscription(tx, d.subscription_id);
+          await reconcileDispute(tx, d.payment_id);
           note = status;
         }
       }
@@ -181,6 +205,18 @@ export async function processWebhook(verified: unknown, webhookId: string) {
         await tx.billingCheckout.update({ where: { id: attempt.id }, data: { status: "consumed" } });
         note = status;
       }
+    } else if (eventName.startsWith("dispute.")) {
+      const d = dispute.parse(body.data);
+      if (d.dispute_status !== eventName.replace(".", "_")) throw new Error("Inconsistent dispute event");
+      const existing = await tx.dodoDispute.findUnique({ where: { id: d.dispute_id } });
+      const at = new Date(body.timestamp);
+      if (existing && existing.paymentId !== d.payment_id) throw new Error("Dispute payment changed");
+      if (!existing || at > existing.eventAt) {
+        const state = { paymentId: d.payment_id, status: d.dispute_status, eventAt: at };
+        await tx.dodoDispute.upsert({ where: { id: d.dispute_id }, create: { id: d.dispute_id, ...state }, update: state });
+        await reconcileDispute(tx, d.payment_id);
+      }
+      note = "dispute-recorded";
     } else if (eventName === "refund.succeeded") {
       const d = refund.parse(body.data);
       if (d.is_partial && d.amount == null) throw new Error("Partial refund is missing amount");

@@ -52,6 +52,7 @@ export const config = {
   isProd: optional("NODE_ENV", "development") === "production",
 
   databaseUrl: process.env.DATABASE_URL ?? "",
+  publicBaseUrl: process.env.PUBLIC_BASE_URL ?? "",
 
   jwtSecret: optional("JWT_SECRET", ""),
   accessTokenTtlSec: parseInt(optional("ACCESS_TOKEN_TTL_SEC", "3600"), 10),
@@ -113,11 +114,22 @@ export function billingMissingVariables(): string[] {
     DODO_LIFETIME_PRODUCT_ID: p.lifetimeProductId,
     DODO_MONTHLY_PRODUCT_ID: p.monthlyProductId,
     DODO_RETURN_BASE_URL: p.redirectUrl,
+    PUBLIC_BASE_URL: config.publicBaseUrl,
   }).filter(([, value]) => !value.trim() || /YOUR_|CHANGE_ME|REPLACE_WITH/.test(value))
     .map(([name]) => name);
 }
 
 export const billingConfigured = (): boolean => billingMissingVariables().length === 0;
+
+export function billingReturnUrl(): string {
+  const url = new URL(config.dodo.redirectUrl);
+  const publicUrl = new URL(config.publicBaseUrl);
+  if (url.origin !== publicUrl.origin || url.username || url.password || url.search || url.hash || url.pathname !== "/"
+    || (url.protocol !== "https:" && (config.isProd || url.protocol !== "http:"))) {
+    throw new Error("DODO_RETURN_BASE_URL must match the PUBLIC_BASE_URL origin");
+  }
+  return new URL("/?checkout=success", url.origin).href;
+}
 
 export function validateConfig(): string[] {
   const problems: string[] = [];
@@ -140,9 +152,8 @@ export function validateConfig(): string[] {
   if (!Number.isInteger(p.lifetimeDealLimit) || p.lifetimeDealLimit < 1 || p.lifetimeDealLimit > 50) problems.push("LIFETIME_DEAL_LIMIT must be an integer from 1 to 50");
   if (p.redirectUrl) {
     try {
-      const url = new URL(p.redirectUrl);
-      if (url.username || url.password || url.search || url.hash || (url.protocol !== "https:" && (config.isProd || url.protocol !== "http:"))) throw new Error();
-    } catch { problems.push("DODO_RETURN_BASE_URL must be a trusted application URL (HTTPS in production)"); }
+      billingReturnUrl();
+    } catch { problems.push("DODO_RETURN_BASE_URL must match the PUBLIC_BASE_URL origin (HTTPS in production)"); }
   }
   if (p.lifetimeProductId && p.lifetimeProductId === p.monthlyProductId) problems.push("Dodo lifetime and monthly products must differ");
   return problems;
