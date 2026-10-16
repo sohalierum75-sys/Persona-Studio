@@ -1437,3 +1437,5 @@ img.topbar-logo-icon {
 .delete-confirmation .delete-confirmation-warning { font-weight: 600; color: var(--text-primary); }
 .delete-confirmation-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 .delete-confirmation-actions .btn { min-width: 88px; }
+
+.account-initials { font-size: 12px; font-weight: 650; line-height: 1; }

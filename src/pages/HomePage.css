@@ -221,7 +221,7 @@
 
 .hp-art-prompt { background: var(--bg-input); }
 .hp-art-engines {
-  display: flex; gap: 2px; background: var(--bg-elevated);
+  display: flex; flex-wrap: wrap; gap: 2px; background: var(--bg-elevated);
   border: 1px solid var(--border); border-radius: 10px; padding: 2px; width: fit-content; max-width: 100%;
   margin-bottom: 10px;
 }
@@ -633,4 +633,19 @@
   .hp-pricing { grid-template-columns: 1fr; }
   .hp-plan-badge { left: 20px; }
   .hp-plan-price strong { font-size: 38px; }
+}
+
+/* Keep account status available at every viewport width. */
+.hp-auth-loading { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.hp-header .account-menu { flex-shrink: 0; }
+@media (max-width: 720px) {
+  .hp-header-actions .hp-sign-in { display: inline-flex; }
+  .hp-auth-loading { max-width: 72px; white-space: normal; text-align: center; }
+  .hp-header .account-menu-dropdown { position: fixed; top: 64px; right: 12px; }
+}
+@media (max-width: 540px) {
+  .hp-header { flex-wrap: wrap; }
+  .hp-header-actions { order: 3; flex: 1 0 100%; justify-content: flex-end; }
+  .hp-header .hp-menu { margin-left: auto; }
+  .hp-header .account-menu-dropdown { top: 112px; max-height: calc(100dvh - 124px); }
 }

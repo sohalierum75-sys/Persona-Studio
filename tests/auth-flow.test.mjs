@@ -22,6 +22,8 @@ async function pageFor(t, tokenStatus = 200) {
   const context = await browser.newContext();
   t.after(() => context.close());
   const page = await context.newPage();
+  // Cold Vite dependency compilation can exceed Playwright's 30s navigation default.
+  page.setDefaultNavigationTimeout(90000);
   const calls = { exchange: 0, authenticated: 0, refresh: 0, challenge: null };
   await page.route('**/api/**', async route => {
     const request = route.request();
@@ -29,6 +31,7 @@ async function pageFor(t, tokenStatus = 200) {
     if (pathname === '/api/billing/config') {
       return route.fulfill({ json: { configured: true, lifetime: { limit: 50, claimed: null, remaining: null } } });
     }
+    if (pathname === '/api/auth/logout') return route.fulfill({ json: { ok: true } });
     if (pathname === '/api/auth/token') {
       calls.exchange++;
       const verifier = request.postDataJSON().verifier;
@@ -275,4 +278,103 @@ test('account shows identity, usage, sync and actions; Escape restores focus', a
   await page.keyboard.press('Escape');
   assert.equal(await panel.count(), 0);
   assert.equal(await page.getByRole('button', { name: 'Account', exact: true }).evaluate(el => el === document.activeElement), true);
+});
+
+
+const homeHeader = page => page.locator('header.hp-header');
+
+test('homepage header shows signed-out actions and keeps mobile navigation usable', async t => {
+  const { page } = await pageFor(t);
+  await page.goto(origin + '/?pricing=1');
+  const header = homeHeader(page);
+  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  assert.equal(await header.getByRole('button', { name: 'Account', exact: true }).count(), 0);
+  assert.equal(await header.getByRole('link', { name: 'Open Studio' }).getAttribute('href'), '/characters');
+  await header.getByRole('link', { name: 'Download extension' }).waitFor();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  await header.getByRole('button', { name: 'Toggle navigation' }).click();
+  await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Download extension' }).waitFor();
+  await page.screenshot({ path: 'test-results/header-mobile.png' });
+  const overflow = await page.evaluate(() => [...document.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > innerWidth + 1).slice(0, 12).map(el => ({ tag: el.tagName, class: el.className, right: el.getBoundingClientRect().right })));
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), JSON.stringify(overflow));
+});
+
+test('homepage header waits for session restoration then shows the account across refreshes', async t => {
+  const { page } = await pageFor(t);
+  await page.addInitScript(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), { ...session(), expiresAt: 0 });
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  t.after(() => release());
+  await page.route('**/api/auth/refresh', async route => { await gate; await route.fulfill({ json: session() }); });
+  await page.goto(origin + '/?pricing=1');
+  const header = homeHeader(page);
+  await header.getByRole('status', { name: 'Restoring account' }).waitFor();
+  assert.equal(await header.getByRole('link', { name: 'Sign in', exact: true }).count(), 0);
+  release();
+  const account = header.getByRole('button', { name: 'Account', exact: true });
+  await account.waitFor(); assert.equal(await account.innerText(), 'AT');
+  await account.click();
+  const menu = header.getByRole('region', { name: 'Your account' });
+  await menu.getByText(user.email, { exact: true }).waitFor();
+  assert.equal(await menu.getByRole('link', { name: 'Open workspace' }).getAttribute('href'), '/characters');
+  await page.reload(); await account.waitFor();
+  assert.equal(await header.getByRole('link', { name: 'Sign in', exact: true }).count(), 0);
+  assert.doesNotMatch(await header.innerHTML(), /test-access|test-refresh/);
+});
+
+test('homepage header reacts to Google code exchange without reloading and sign-out clears account memory', async t => {
+  const { page } = await pageFor(t);
+  await page.goto(origin + '/?pricing=1');
+  const header = homeHeader(page);
+  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  await page.route('**/api/auth/token', route => {
+    assert.equal(route.request().postDataJSON().verifier, 'v'.repeat(43));
+    return route.fulfill({ json: session() });
+  });
+  await page.evaluate(async () => {
+    window.headerDocumentMarker = 'same-document';
+    sessionStorage.setItem('ps_pkce', 'v'.repeat(43));
+    history.replaceState(history.state, '', '/?pricing=1&code=test-code');
+    const { initAuth } = await import('/src/lib/auth.ts'); await initAuth();
+    const { useStudio } = await import('/src/store/index.ts');
+    const { selectAccount } = await import('/src/db/index.ts');
+    selectAccount('auth-regression');
+    useStudio.setState({ characters: [{ id: 'private-character', name: 'Private character' }], activeCharacterId: 'private-character' });
+  });
+  await header.getByRole('button', { name: 'Account', exact: true }).click();
+  await header.getByRole('region', { name: 'Your account' }).getByText(user.email, { exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => window.headerDocumentMarker), 'same-document');
+  assert.ok(!page.url().includes('code='));
+  await header.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  assert.equal(await header.getByRole('region', { name: 'Your account' }).count(), 0);
+  const cleared = await page.evaluate(async () => {
+    const { useStudio } = await import('/src/store/index.ts');
+    const { currentAccount } = await import('/src/db/index.ts');
+    return { count: useStudio.getState().characters.length, active: useStudio.getState().activeCharacterId, account: currentAccount(), stored: !!localStorage.getItem('ps_auth_tokens') };
+  });
+  assert.deepEqual(cleared, { count: 0, active: null, account: null, stored: false });
+});
+
+test('homepage header handles missing names, broken avatars and expired sessions on mobile', async t => {
+  const { page } = await pageFor(t);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.addInitScript(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), { ...session(), user: { ...user, name: '', avatarUrl: 'https://avatar.example/broken.png' } });
+  await page.route('https://avatar.example/**', route => route.fulfill({ status: 404, body: '' }));
+  await page.goto(origin + '/?pricing=1');
+  const header = homeHeader(page), account = header.getByRole('button', { name: 'Account', exact: true });
+  await account.locator('.account-initials').waitFor(); assert.equal(await account.innerText(), 'A');
+  await account.click();
+  const panel = header.getByRole('region', { name: 'Your account' });
+  await panel.getByText(user.email, { exact: true }).waitFor();
+  const box = await panel.boundingBox(); assert.ok(box.x >= 0 && box.x + box.width <= 375);
+  await page.route('**/api/billing/entitlements', route => route.fulfill({ status: 401, json: { error: 'Expired' } }));
+  await page.route('**/api/auth/refresh', route => route.fulfill({ status: 401, json: { error: 'Expired' } }));
+  await page.evaluate(async () => {
+    const { apiFetch } = await import('/src/lib/api.ts');
+    try { await apiFetch('/api/billing/entitlements'); } catch { /* Expected expiry. */ }
+  });
+  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  assert.equal(await panel.count(), 0);
 });

@@ -14,10 +14,14 @@
 
 import { API_URL, API_CONFIGURED, IS_EXTENSION } from "./config";
 import {
-  getTokens, setTokens, clearTokens, exchangeAuthCode,
+  getTokens, clearTokens, exchangeAuthCode, onAuthExpired,
   consumeUrlAuthCode, refreshSession, type PublicUser,
 } from "./api";
 import { useState, useEffect } from "react";
+import { selectAccount } from "../db";
+import { clearAccountUI } from "../store";
+import { teardownSync, setOnRemoteChange } from "./sync";
+import { useUpgradeDialog } from "./plan-guard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,7 +55,16 @@ const _listeners = new Set<AuthListener>();
 let _refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 function setState(partial: Partial<AuthState>) {
-  _state = { ..._state, ...partial };
+  const next = { ..._state, ...partial };
+  if (_state.user && _state.user.id !== next.user?.id) {
+    teardownSync();
+    setOnRemoteChange(null);
+    selectAccount(null);
+    clearAccountUI();
+    useUpgradeDialog.getState().dismiss();
+    try { sessionStorage.removeItem("ps_billing_intent"); } catch { /* Storage may be disabled. */ }
+  }
+  _state = next;
   _listeners.forEach((l) => l(_state));
 }
 
@@ -144,6 +157,7 @@ export async function initAuth(): Promise<AuthState> {
     } catch (err) {
       setState({
         status: "error",
+        user: null,
         error: err instanceof Error ? err.message : "Auth initialisation failed",
       });
     }
@@ -229,6 +243,12 @@ export async function signOut(): Promise<void> {
   setState({ status:"signed-out",user:null,error:null,sessionExpired:false });
   if(tokens) void fetch(`${API_URL}/api/auth/logout`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({refreshToken:tokens.refreshToken}),signal:AbortSignal.timeout(10000)}).catch(()=>{});
 }
+// Expiry must update public pages as well as the workspace.
+onAuthExpired(() => {
+  if (_refreshTimer) { clearTimeout(_refreshTimer); _refreshTimer = null; }
+  setState({ status: "signed-out", user: null, error: null, sessionExpired: true });
+});
+
 // Other tabs/panels must stop showing an account immediately after a switch.
 const storageChanged = async () => {
   const tokens=await getTokens();

@@ -7,7 +7,6 @@ import React, { useEffect, useState } from "react";
 import { useAuth, getAuthState, initAuth, signInWithGoogle } from "../../lib/auth";
 import { initSync, teardownSync, setOnRemoteChange } from "../../lib/sync";
 import { ensureAccountCache } from "../../lib/accounts";
-import { onAuthExpired } from "../../lib/api";
 import { API_CONFIGURED } from "../../lib/config";
 import { useStudio } from "../../store";
 import MigrationPrompt from "./MigrationPrompt";
@@ -35,13 +34,6 @@ export default function AuthGate({ children }: Props) {
       if (getAuthState().status === "initialising") void initAuth();
     }
   }, []);
-
-  // When a session silently expires, flip the auth state so the UI reacts
-  useEffect(() => onAuthExpired(() => {
-    teardownSync();
-    // Force a re-render into the signed-out state
-    initAuth();
-  }), []);
 
   // When user signs in → switch the local cache to their account, init sync,
   // and reload the store whenever the server sends us different data.

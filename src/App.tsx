@@ -1,6 +1,6 @@
 import DeleteConfirmationDialog from "./components/ui/DeleteConfirmationDialog";
 import UpgradeDialog from "./components/auth/UpgradeDialog";
-import React, { lazy, Suspense, useEffect } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth, initAuth, signInWithGoogle } from "./lib/auth";
 import { API_CONFIGURED, IS_EXTENSION } from "./lib/config";
@@ -29,6 +29,7 @@ function RootRoute() {
   // pricing checkout starts and by Dodo Payments's post-payment redirect.
   // ?pricing=1 lets signed-in Free users view optional upgrades.
   const [params] = useSearchParams();
+  const [isCallback] = useState(() => params.has("code") || params.has("auth_error"));
   const inCheckout = params.has("checkout") || params.has("pricing") || pendingCheckoutPlan() !== null;
 
   // Extension context never needs the marketing homepage
@@ -45,6 +46,7 @@ function RootRoute() {
 
   // Finish callback exchange/session restoration before choosing a public route.
   if (auth.status === "initialising" || auth.status === "signing-in") {
+    if (!isCallback) return <HomePage />;
     return <LoadingScreen message={auth.status === "signing-in" ? "Signing in with Google…" : "Loading Persona Studio…"} />;
   }
   // OAuth returns to this route; keep failures visible with the existing retry UI.

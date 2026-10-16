@@ -11,7 +11,7 @@ import type {
 } from "../types";
 import { DEFAULT_FIELD_CONFIGS } from "../types";
 import {
-  localMutations, characterDB, episodeDB, sceneDB, outfitDB, locationDB,
+  currentAccount, localMutations, characterDB, episodeDB, sceneDB, outfitDB, locationDB,
   referenceAssetDB, usageRecordDB, continuityGroupDB, settingsDB,
 } from "../db";
 import { SETTINGS_ID } from "../lib/sync";
@@ -102,6 +102,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   reducedMotion: false,
 };
 
+let accountGeneration = 0;
+
 let promptSave: Promise<void> = Promise.resolve();
 const now = () => new Date().toISOString();
 
@@ -124,6 +126,8 @@ export const useStudio = create<StudioState>()(
     isLoaded: false,
 
     loadAll: async () => {
+      const generation = accountGeneration;
+      const account = currentAccount();
       const [
         characters, rawEpisodes, rawScenes, outfits, locations,
         referenceAssets, usageRecords, continuityGroups, settings,
@@ -143,6 +147,7 @@ export const useStudio = create<StudioState>()(
       // Pre-multi-prompt scenes stored bulk-imported prompts in
       // `importedPrompts` — fold that list into `prompts` (never dropped)
       // and make sure both new collections exist.
+      if (generation !== accountGeneration || account !== currentAccount()) return;
       const migrated: Scene[] = [];
       const episodes = rawEpisodes;
       const scenes = rawScenes.map((sc) => {
@@ -162,6 +167,7 @@ export const useStudio = create<StudioState>()(
         await Promise.all(migrated.map((s) => sceneDB.put(s)));
       }
 
+      if (generation !== accountGeneration || account !== currentAccount()) return;
       set((s) => {
         s.characters = characters;
         s.episodes = episodes;
@@ -484,3 +490,15 @@ export const useStudio = create<StudioState>()(
     setActiveScene: (id) => set((s) => { s.activeSceneId = id; }),
   }))
 );
+
+
+/** Drop only in-memory account data. IndexedDB and pending edits remain intact. */
+export function clearAccountUI(): void {
+  accountGeneration++;
+  useStudio.setState({
+    characters: [], episodes: [], scenes: [], outfits: [], locations: [],
+    referenceAssets: [], usageRecords: [], continuityGroups: [], continuityWarnings: [],
+    activeCharacterId: null, activeEpisodeId: null, activeSceneId: null,
+    settings: DEFAULT_SETTINGS, isSaving: false, isLoaded: true,
+  });
+}

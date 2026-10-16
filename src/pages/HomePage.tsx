@@ -4,6 +4,8 @@ import {
   ArrowRight, Check, Copy, Download, Film, Layers, LockKeyhole, MapPin,
   Menu, Monitor, Puzzle, RefreshCw, Shirt, Smartphone, UserRound, X,
 } from "lucide-react";
+import AccountMenu from "../components/auth/AccountMenu";
+import { useAuth } from "../lib/auth";
 import Brand from "../components/ui/Brand";
 import PricingSection from "../components/home/PricingSection";
 import { PRIMARY_GENERATORS, formatGeneratorPrompt, type GeneratorId } from "../utils/generators";
@@ -81,6 +83,7 @@ const FAQ = [
 ];
 
 export default function HomePage() {
+  const auth = useAuth();
   const [sceneIndex, setSceneIndex] = useState(0);
   const [generator, setGenerator] = useState<GeneratorId>("midjourney");
   const [copied, setCopied] = useState("");
@@ -124,7 +127,11 @@ export default function HomePage() {
       </nav>
       <div className="hp-header-actions">
         <a href={downloadUrl} download className="btn btn-ghost" id="header-download-extension"><Download size={14} /> Download extension</a>
-        <Link to="/characters" className="btn btn-ghost">Sign in</Link>
+        {auth.status === "initialising" || auth.status === "signing-in"
+          ? <span className="hp-auth-loading" role="status" aria-label="Restoring account">Checking account...</span>
+          : auth.status === "signed-in" && auth.user
+            ? <AccountMenu key={auth.user.id} workspaceHref="/characters" />
+            : <Link to="/characters" className="btn btn-ghost hp-sign-in">Sign in</Link>}
         <Link to="/characters" className="btn btn-secondary">Open Studio <ArrowRight size={14} /></Link>
       </div>
       <button className="btn btn-icon hp-menu" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="Toggle navigation">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
@@ -132,6 +139,7 @@ export default function HomePage() {
     {menuOpen && <nav className="hp-mobile-nav" aria-label="Mobile navigation">
       {NAV_LINKS.map(l => <button className="btn btn-ghost" key={l.target} onClick={() => scrollTo(l.target)}>{l.label}</button>)}
       <Link className="btn btn-ghost" to="/pricing">Pricing</Link>
+      <a href={downloadUrl} download className="btn btn-ghost">Download extension</a>
       <Link className="btn btn-primary" to="/characters">Open Studio</Link>
     </nav>}
 

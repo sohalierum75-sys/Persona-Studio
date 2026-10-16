@@ -1,14 +1,15 @@
 ﻿import { useState, useRef, useEffect, useId } from "react";
-import { ArrowUpRight, Cloud, LogOut, User } from "lucide-react";
+import { ArrowUpRight, Cloud, LogOut } from "lucide-react";
 import { useAuth, signOut } from "../../lib/auth";
 import { useSyncDisplay } from "../../lib/sync";
 import { API_CONFIGURED } from "../../lib/config";
 import { fetchEntitlements, UPGRADE_URL, type Entitlements } from "../../lib/billing";
 
-export default function AccountMenu() {
+export default function AccountMenu({ workspaceHref }: { workspaceHref?: string }) {
   const auth = useAuth();
   const { shown, sync } = useSyncDisplay();
   const [open, setOpen] = useState(false);
+  const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -17,6 +18,7 @@ export default function AccountMenu() {
   useEffect(() => {
     let cancelled = false;
     setEntitlements(null);
+    setLoading(false);
     if (open && auth.status === "signed-in") {
       setLoading(true);
       void fetchEntitlements().then(value => { if (!cancelled) setEntitlements(value); })
@@ -42,9 +44,10 @@ export default function AccountMenu() {
 
   if (!API_CONFIGURED || auth.status !== "signed-in" || !auth.user) return null;
   const user = auth.user;
-  const name = user.name || user.email?.split("@")[0] || "User";
+  const name = user.name?.trim() || user.email?.split("@")[0] || "Account";
+  const initials = name.split(/\s+/).slice(0, 2).map(part => Array.from(part)[0]).join("").toUpperCase();
   const email = user.email ?? "";
-  const avatarUrl = user.avatarUrl ?? undefined;
+  const avatarUrl = user.avatarUrl && failedAvatar !== user.avatarUrl ? user.avatarUrl : undefined;
   const syncLabel = shown === "saving" ? "Saving…"
     : shown === "saved" ? "Saved"
     : shown === "offline" ? "Offline"
@@ -57,12 +60,12 @@ export default function AccountMenu() {
   }}>
     <button ref={trigger} className="account-avatar-btn" onClick={() => setOpen(v => !v)}
       title={name} aria-label="Account" aria-expanded={open} aria-controls={panelId}>
-      {avatarUrl ? <img src={avatarUrl} alt="" /> : <User size={16} />}
+      {avatarUrl ? <img src={avatarUrl} alt="" onError={() => setFailedAvatar(avatarUrl)} /> : <span className="account-initials" aria-hidden="true">{initials}</span>}
     </button>
     {open && <div id={panelId} className="account-menu-dropdown" role="region" aria-label="Your account">
       <div className="account-menu-profile">
-        {avatarUrl ? <img className="account-menu-avatar" src={avatarUrl} alt="" />
-          : <div className="account-menu-avatar-placeholder"><User size={18} /></div>}
+        {avatarUrl ? <img className="account-menu-avatar" src={avatarUrl} alt="" onError={() => setFailedAvatar(avatarUrl)} />
+          : <div className="account-menu-avatar-placeholder"><span className="account-initials" aria-hidden="true">{initials}</span></div>}
         <div className="account-menu-identity">
           <div className="account-menu-name" title={name}>{name}</div>
           <div className="account-menu-email" title={email}>{email}</div>
@@ -93,6 +96,9 @@ export default function AccountMenu() {
         {sync.error && <p className="account-menu-error" role="alert">{sync.error} Your pending changes remain on this device. <a href={UPGRADE_URL} target="_blank" rel="noreferrer">View plans</a></p>}
       </div>}
       <div className="account-menu-divider" />
+      {workspaceHref && <a className="account-menu-item" href={workspaceHref} onClick={() => setOpen(false)}>
+        <ArrowUpRight size={14} /> Open workspace
+      </a>}
       <button className="account-menu-item account-menu-item--danger" onClick={() => { setOpen(false); void signOut(); }}>
         <LogOut size={14} /> Sign out
       </button>
