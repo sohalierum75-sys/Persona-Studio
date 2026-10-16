@@ -82,8 +82,12 @@ test('Google callback saves tokens, enters existing Studio and survives refresh'
   assert.equal(calls.exchange, 1);
   assert.ok(calls.authenticated > 0);
   assert.ok(await page.evaluate(() => !!localStorage.getItem('ps_auth_tokens') && !sessionStorage.getItem('ps_pkce')));
-  // Signed-in visit to the marketing root bounces to the Studio.
+  // A signed-in visit to the marketing root stays on the public homepage.
   await page.goto(origin);
+  await page.getByRole('button', { name: 'Account', exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/');
+  // Only an explicit Open Studio click enters the workspace.
+  await page.locator('header.hp-header').getByRole('link', { name: 'Open Studio' }).click();
   await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
   assert.equal(new URL(page.url()).pathname, '/characters');
   const beforeReload = calls.authenticated;
@@ -128,7 +132,10 @@ test('a cancelled callback restores the saved session instead of starting a Goog
   await page.goto(origin);
   await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
   await page.goto(origin + '/?auth_error=cancelled');
-  await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
+  // The stored session is restored on the homepage — no redirect, no sign-in screen.
+  await page.locator('header.hp-header').getByRole('button', { name: 'Account', exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/');
+  assert.equal(await page.getByRole('button', { name: 'Continue with Google' }).count(), 0);
   assert.ok(calls.authenticated > 0, 'the stored session must be used, not discarded');
 });
 
@@ -285,14 +292,14 @@ const homeHeader = page => page.locator('header.hp-header');
 
 test('homepage header shows signed-out actions and keeps mobile navigation usable', async t => {
   const { page } = await pageFor(t);
-  await page.goto(origin + '/?pricing=1');
+  await page.goto(origin + '/');
   const header = homeHeader(page);
-  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  await header.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
   assert.equal(await header.getByRole('button', { name: 'Account', exact: true }).count(), 0);
   assert.equal(await header.getByRole('link', { name: 'Open Studio' }).getAttribute('href'), '/characters');
   await header.getByRole('link', { name: 'Download extension' }).waitFor();
   await page.setViewportSize({ width: 375, height: 812 });
-  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  await header.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
   await header.getByRole('button', { name: 'Toggle navigation' }).click();
   await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Download extension' }).waitFor();
   await page.screenshot({ path: 'test-results/header-mobile.png' });
@@ -307,10 +314,10 @@ test('homepage header waits for session restoration then shows the account acros
   const gate = new Promise(resolve => { release = resolve; });
   t.after(() => release());
   await page.route('**/api/auth/refresh', async route => { await gate; await route.fulfill({ json: session() }); });
-  await page.goto(origin + '/?pricing=1');
+  await page.goto(origin + '/');
   const header = homeHeader(page);
   await header.getByRole('status', { name: 'Restoring account' }).waitFor();
-  assert.equal(await header.getByRole('link', { name: 'Sign in', exact: true }).count(), 0);
+  assert.equal(await header.getByRole('button', { name: 'Sign in', exact: true }).count(), 0);
   release();
   const account = header.getByRole('button', { name: 'Account', exact: true });
   await account.waitFor(); assert.equal(await account.innerText(), 'AT');
@@ -319,15 +326,16 @@ test('homepage header waits for session restoration then shows the account acros
   await menu.getByText(user.email, { exact: true }).waitFor();
   assert.equal(await menu.getByRole('link', { name: 'Open workspace' }).getAttribute('href'), '/characters');
   await page.reload(); await account.waitFor();
-  assert.equal(await header.getByRole('link', { name: 'Sign in', exact: true }).count(), 0);
+  assert.equal(new URL(page.url()).pathname, '/');
+  assert.equal(await header.getByRole('button', { name: 'Sign in', exact: true }).count(), 0);
   assert.doesNotMatch(await header.innerHTML(), /test-access|test-refresh/);
 });
 
 test('homepage header reacts to Google code exchange without reloading and sign-out clears account memory', async t => {
   const { page } = await pageFor(t);
-  await page.goto(origin + '/?pricing=1');
+  await page.goto(origin + '/');
   const header = homeHeader(page);
-  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  await header.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
   await page.route('**/api/auth/token', route => {
     assert.equal(route.request().postDataJSON().verifier, 'v'.repeat(43));
     return route.fulfill({ json: session() });
@@ -335,7 +343,7 @@ test('homepage header reacts to Google code exchange without reloading and sign-
   await page.evaluate(async () => {
     window.headerDocumentMarker = 'same-document';
     sessionStorage.setItem('ps_pkce', 'v'.repeat(43));
-    history.replaceState(history.state, '', '/?pricing=1&code=test-code');
+    history.replaceState(history.state, '', '/?code=test-code');
     const { initAuth } = await import('/src/lib/auth.ts'); await initAuth();
     const { useStudio } = await import('/src/store/index.ts');
     const { selectAccount } = await import('/src/db/index.ts');
@@ -347,7 +355,7 @@ test('homepage header reacts to Google code exchange without reloading and sign-
   assert.equal(await page.evaluate(() => window.headerDocumentMarker), 'same-document');
   assert.ok(!page.url().includes('code='));
   await header.getByRole('button', { name: 'Sign out', exact: true }).click();
-  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  await header.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
   assert.equal(await header.getByRole('region', { name: 'Your account' }).count(), 0);
   const cleared = await page.evaluate(async () => {
     const { useStudio } = await import('/src/store/index.ts');
@@ -362,7 +370,7 @@ test('homepage header handles missing names, broken avatars and expired sessions
   await page.setViewportSize({ width: 375, height: 812 });
   await page.addInitScript(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), { ...session(), user: { ...user, name: '', avatarUrl: 'https://avatar.example/broken.png' } });
   await page.route('https://avatar.example/**', route => route.fulfill({ status: 404, body: '' }));
-  await page.goto(origin + '/?pricing=1');
+  await page.goto(origin + '/');
   const header = homeHeader(page), account = header.getByRole('button', { name: 'Account', exact: true });
   await account.locator('.account-initials').waitFor(); assert.equal(await account.innerText(), 'A');
   await account.click();
@@ -375,6 +383,58 @@ test('homepage header handles missing names, broken avatars and expired sessions
     const { apiFetch } = await import('/src/lib/api.ts');
     try { await apiFetch('/api/billing/entitlements'); } catch { /* Expected expiry. */ }
   });
-  await header.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  await header.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
   assert.equal(await panel.count(), 0);
+});
+
+test('direct homepage visits never redirect, even when authenticated', async t => {
+  const { page } = await pageFor(t);
+  // Signed out: plain "/" is the public homepage.
+  await page.goto(origin + '/');
+  await page.getByRole('heading', { name: /One character\. Every scene\./ }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/');
+  assert.equal(await page.getByRole('button', { name: 'Continue with Google' }).count(), 0);
+  // Authenticated: still the homepage, with the account avatar in the header.
+  await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
+  await page.reload();
+  const header = homeHeader(page);
+  await header.getByRole('button', { name: 'Account', exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/');
+  // Refresh keeps the user on the homepage.
+  await page.reload();
+  await header.getByRole('button', { name: 'Account', exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/');
+});
+
+test('Open Studio from the signed-out homepage runs Google sign-in, then enters the Studio', async t => {
+  const { page, calls } = await pageFor(t);
+  await page.goto(origin + '/');
+  await page.locator('#hero-open-studio').click();
+  await page.getByRole('button', { name: 'Continue with Google' }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/characters');
+  let redirect;
+  await page.route('**/api/auth/google/start?**', route => {
+    const start = new URL(route.request().url());
+    redirect = start.searchParams.get('redirect');
+    calls.challenge = start.searchParams.get('challenge');
+    return route.fulfill({ contentType: 'text/html', body: 'Provider redirect' });
+  });
+  await page.getByRole('button', { name: 'Continue with Google' }).click();
+  await page.waitForURL('**/api/auth/google/start?**');
+  assert.equal(redirect, origin + '/characters');
+  // Returning from Google with the code enters the Studio directly.
+  await page.goto(origin + '/characters?code=test-code');
+  await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
+  assert.equal(new URL(page.url()).search, '');
+});
+
+test('the website logo returns to the public homepage from the Studio', async t => {
+  const { page } = await pageFor(t);
+  await page.goto(origin + '/');
+  await page.evaluate(saved => localStorage.setItem('ps_auth_tokens', JSON.stringify(saved)), session());
+  await page.goto(origin + '/characters');
+  await page.getByRole('button', { name: 'New Character', exact: true }).first().waitFor();
+  await page.locator('.topbar-logo').click();
+  await homeHeader(page).getByRole('button', { name: 'Account', exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/');
 });

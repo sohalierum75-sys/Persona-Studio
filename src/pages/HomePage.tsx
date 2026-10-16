@@ -5,7 +5,7 @@ import {
   Menu, Monitor, Puzzle, RefreshCw, Shirt, Smartphone, UserRound, X,
 } from "lucide-react";
 import AccountMenu from "../components/auth/AccountMenu";
-import { useAuth } from "../lib/auth";
+import { signInWithGoogle, useAuth } from "../lib/auth";
 import Brand from "../components/ui/Brand";
 import PricingSection from "../components/home/PricingSection";
 import { PRIMARY_GENERATORS, formatGeneratorPrompt, type GeneratorId } from "../utils/generators";
@@ -131,7 +131,8 @@ export default function HomePage() {
           ? <span className="hp-auth-loading" role="status" aria-label="Restoring account">Checking account...</span>
           : auth.status === "signed-in" && auth.user
             ? <AccountMenu key={auth.user.id} workspaceHref="/characters" />
-            : <Link to="/characters" className="btn btn-ghost hp-sign-in">Sign in</Link>}
+            : <button className="btn btn-ghost hp-sign-in"
+                onClick={() => void signInWithGoogle({ returnUrl: window.location.href })}>Sign in</button>}
         <Link to="/characters" className="btn btn-secondary">Open Studio <ArrowRight size={14} /></Link>
       </div>
       <button className="btn btn-icon hp-menu" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="Toggle navigation">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>

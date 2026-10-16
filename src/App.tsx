@@ -17,7 +17,6 @@ const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
-import { pendingCheckoutPlan } from "./lib/billing";
 
 // ─── Studio layout wrapper (layout route shared by all studio pages) ──────────
 
@@ -25,12 +24,13 @@ import { pendingCheckoutPlan } from "./lib/billing";
 
 function RootRoute() {
   const auth = useAuth();
-  // ?checkout=… keeps a signed-in user on the homepage: it is set when a
-  // pricing checkout starts and by Dodo Payments's post-payment redirect.
-  // ?pricing=1 lets signed-in Free users view optional upgrades.
+  // "/" is always the public homepage — signed in or out, fresh visit or
+  // refresh. Authentication only decides what the header shows (Sign in vs.
+  // the account menu); it never redirects to the Studio. The one exception is
+  // returning from the Google OAuth redirect (?code=… / ?auth_error=…): the
+  // single-use code must be exchanged before the header can show real state.
   const [params] = useSearchParams();
   const [isCallback] = useState(() => params.has("code") || params.has("auth_error"));
-  const inCheckout = params.has("checkout") || params.has("pricing") || pendingCheckoutPlan() !== null;
 
   // Extension context never needs the marketing homepage
   if (IS_EXTENSION) return <Navigate to="/characters" replace />;
@@ -38,19 +38,12 @@ function RootRoute() {
   // Local-only mode (no API configured) — skip homepage
   if (!API_CONFIGURED) return <Navigate to="/characters" replace />;
 
-  // Confirmed signed-in → go to Studio (unless a checkout brought them here)
-  if (auth.status === "signed-in") {
-    if (inCheckout) return <HomePage />;
-    return <Navigate to="/characters" replace />;
-  }
-
-  // Finish callback exchange/session restoration before choosing a public route.
-  if (auth.status === "initialising" || auth.status === "signing-in") {
-    if (!isCallback) return <HomePage />;
+  // Finish the callback code exchange before showing the homepage.
+  if (isCallback && (auth.status === "initialising" || auth.status === "signing-in")) {
     return <LoadingScreen message={auth.status === "signing-in" ? "Signing in with Google…" : "Loading Persona Studio…"} />;
   }
   // OAuth returns to this route; keep failures visible with the existing retry UI.
-  if (auth.error) {
+  if (auth.status === "error") {
     return <SignInScreen loading={false} error={auth.error} onSignIn={signInWithGoogle} />;
   }
 
